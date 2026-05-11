@@ -1,0 +1,161 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+const carouselImages = [
+  {
+    id: 1,
+    src: '/images/hero-1.jpg',
+    alt: 'Luxury Jewellery Collection',
+    title: 'Timeless Elegance',
+    subtitle: 'Exquisite craftsmanship meets modern design'
+  },
+  {
+    id: 2,
+    src: '/images/hero-2.jpg',
+    alt: 'Diamond Jewellery',
+    title: 'Brilliant Beauty',
+    subtitle: 'Handcrafted with precision and care'
+  },
+  {
+    id: 3,
+    src: '/images/hero-3.jpg',
+    alt: 'Fine Jewellery Display',
+    title: 'Natural Radiance',
+    subtitle: 'Premium gems and precious metals'
+  },
+  {
+    id: 4,
+    src: '/images/hero-4.jpg',
+    alt: 'Luxury Jewellery Set',
+    title: 'Exclusive Collection',
+    subtitle: 'Limited edition masterpieces'
+  },
+  {
+    id: 5,
+    src: '/images/hero-5.jpg',
+    alt: 'Jewellery Artistry',
+    title: 'Modern Luxury',
+    subtitle: 'Contemporary designs for every occasion'
+  }
+];
+
+export default function HeroCarousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+
+  useEffect(() => {
+    if (!isAutoPlaying) return;
+
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => 
+        prevIndex === carouselImages.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isAutoPlaying]);
+
+  const goToPrevious = () => {
+    setIsAutoPlaying(false);
+    setCurrentIndex(currentIndex === 0 ? carouselImages.length - 1 : currentIndex - 1);
+  };
+
+  const goToNext = () => {
+    setIsAutoPlaying(false);
+    setCurrentIndex(currentIndex === carouselImages.length - 1 ? 0 : currentIndex + 1);
+  };
+
+  const goToSlide = (index) => {
+    setIsAutoPlaying(false);
+    setCurrentIndex(index);
+  };
+
+  const currentImage = carouselImages[currentIndex];
+
+  return (
+    <section className="relative w-full h-[50vh] sm:h-screen overflow-hidden bg-white">
+      {/* Main Image Container */}
+      <div className="relative w-full h-full">
+        <div className="relative w-full h-full flex items-center justify-center">
+          <Image
+            src={currentImage.src}
+            alt={currentImage.alt}
+            fill
+            className="object-cover"
+            priority
+            sizes="100vw"
+          />
+          
+          {/* Overlay Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40" />
+          
+          {/* Content Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-white px-4 max-w-4xl">
+              <h1 className="font-display text-2xl sm:text-3xl md:text-5xl lg:text-7xl font-light mb-2 sm:mb-4 tracking-wide">
+                {currentImage.title}
+              </h1>
+              <p className="text-sm sm:text-base md:text-xl lg:text-2xl font-light tracking-wider opacity-90">
+                {currentImage.subtitle}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation Buttons */}
+        <button
+          onClick={goToPrevious}
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white transition-all hover:bg-white/30 hover:scale-110 md:left-4 md:h-12 md:w-12"
+          aria-label="Previous slide"
+        >
+          <ChevronLeft className="h-4 w-4 md:h-6 md:w-6" />
+        </button>
+        
+        <button
+          onClick={goToNext}
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white transition-all hover:bg-white/30 hover:scale-110 md:right-4 md:h-12 md:w-12"
+          aria-label="Next slide"
+        >
+          <ChevronRight className="h-4 w-4 md:h-6 md:w-6" />
+        </button>
+      </div>
+
+      {/* Pagination Dots */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center space-x-1.5 md:bottom-8 md:space-x-2">
+        {carouselImages.map((_, index) => (
+          <button
+            key={index}
+            onClick={() => goToSlide(index)}
+            className={`h-1.5 w-1.5 rounded-full transition-all duration-300 md:h-2 md:w-2 ${
+              index === currentIndex 
+                ? 'bg-white w-6 md:w-8' 
+                : 'bg-white/50 hover:bg-white/70'
+            }`}
+            aria-label={`Go to slide ${index + 1}`}
+          />
+        ))}
+      </div>
+
+      {/* Auto-play Toggle */}
+      <button
+        onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+        className="absolute top-2 right-2 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-white transition-all hover:bg-white/30 md:top-4 md:right-4 md:h-10 md:w-10"
+        aria-label={isAutoPlaying ? 'Pause autoplay' : 'Start autoplay'}
+      >
+        <div className="relative">
+          {isAutoPlaying ? (
+            <div className="flex items-center space-x-0.5 md:space-x-1">
+              <div className="h-2 w-0.5 bg-white animate-pulse md:h-3" />
+              <div className="h-2 w-0.5 bg-white animate-pulse delay-75 md:h-3" />
+            </div>
+          ) : (
+            <div className="h-2 w-2 border-2 border-white md:h-3 md:w-3" />
+          )}
+        </div>
+      </button>
+    </section>
+  );
+}

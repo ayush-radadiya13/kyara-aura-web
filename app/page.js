@@ -1,478 +1,159 @@
-"use client";
+import Link from 'next/link';
+import Image from 'next/image';
+import ProductCard from '../components/ProductCard';
+import Header from '../components/Header';
+import HeroCarousel from '../components/HeroCarousel';
 
-import Image from "next/image";
-import Link from "next/link";
-import { useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Gem,
-  Menu,
-  ShoppingBag,
-  Sparkles,
-  User,
-  X,
-} from "lucide-react";
-
-const navItems = ["Home", "Collections", "About", "Services", "Journal", "Contact"];
-
-const featuredCollections = [
-  { name: "Celestial Diamond Ring", price: "$1,240", image: "/images/product-1.png" },
-  { name: "Rose Gold Halo Set", price: "$980", image: "/images/product-2.png" },
-  { name: "Pearl Grace Pendant", price: "$760", image: "/images/product-3.png" },
+// Static mock data for jewellery demonstration
+const mockCategories = [
+  { _id: '1', name: 'Rings', image: '/images/rings-category.jpg' },
+  { _id: '2', name: 'Necklaces', image: '/images/necklaces-category.jpg' },
+  { _id: '3', name: 'Earrings', image: '/images/earrings-category.jpg' },
+  { _id: '4', name: 'Bracelets', image: '/images/bracelets-category.jpg' },
+  { _id: '5', name: 'Pendants', image: '/images/pendants-category.jpg' },
+  { _id: '6', name: 'Sets', image: '/images/sets-category.jpg' },
 ];
 
-const featureItems = [
-  {
-    title: "Ethically Sourced Stones",
-    description: "Certified diamonds and gemstones selected through transparent sourcing.",
-    icon: "/images/truck.svg",
-  },
-  {
-    title: "Easy Personal Styling",
-    description: "Find pieces for daily elegance and bridal moments with guided support.",
-    icon: "/images/bag.svg",
-  },
-  {
-    title: "Concierge Assistance",
-    description: "Our jewellery experts are available every day for styling and gifting help.",
-    icon: "/images/support.svg",
-  },
-  {
-    title: "Lifetime Service",
-    description: "Enjoy cleaning, resizing, and care support for all signature pieces.",
-    icon: "/images/return.svg",
-  },
+const mockProducts = [
+  { _id: '1', name: 'Celestial Diamond Ring', slug: 'celestial-diamond-ring', price: 1240, category: { name: 'Rings' }, images: ['/images/product-1.png'] },
+  { _id: '2', name: 'Rose Gold Halo Set', slug: 'rose-gold-halo-set', price: 980, category: { name: 'Sets' }, images: ['/images/product-2.png'] },
+  { _id: '3', name: 'Pearl Grace Pendant', slug: 'pearl-grace-pendant', price: 760, category: { name: 'Pendants' }, images: ['/images/product-3.png'] },
+  { _id: '4', name: 'Midnight Diamond Earrings', slug: 'midnight-diamond-earrings', price: 1450, category: { name: 'Earrings' }, images: ['/images/product-4.png'] },
 ];
 
-const spotlightProducts = [
-  {
-    title: "Starlight Ring",
-    description: "An elegant everyday ring with a refined finish and modern profile.",
-    image: "/images/product-1.png",
-  },
-  {
-    title: "Aurora Earrings",
-    description: "Lightweight drop earrings crafted for evening celebrations.",
-    image: "/images/product-2.png",
-  },
-  {
-    title: "Velvet Pendant",
-    description: "A polished pendant made to complement both modern and classic attire.",
-    image: "/images/product-3.png",
-  },
+const mockMostWishlisted = [
+  { _id: '5', name: 'Eternal Love Bracelet', slug: 'eternal-love-bracelet', price: 890, category: { name: 'Bracelets' }, images: ['/images/product-5.png'] },
+  { _id: '6', name: 'Royal Sapphire Ring', slug: 'royal-sapphire-ring', price: 2100, category: { name: 'Rings' }, images: ['/images/product-6.png'] },
+  { _id: '7', name: 'Vintage Crystal Necklace', slug: 'vintage-crystal-necklace', price: 1350, category: { name: 'Necklaces' }, images: ['/images/product-7.png'] },
+  { _id: '8', name: 'Diamond Stud Earrings', slug: 'diamond-stud-earrings', price: 680, category: { name: 'Earrings' }, images: ['/images/product-8.png'] },
 ];
 
-const testimonials = [
-  {
-    quote:
-      "Kyara Aura made my wedding jewellery shopping effortless. Every detail felt premium and personal from consultation to delivery.",
-    author: "Nisha Sharma",
-    role: "Bridal Client",
-  },
-  {
-    quote:
-      "The craftsmanship is beautiful and the quality is exceptional. I receive compliments every time I wear my pendant set.",
-    author: "Ritika Mehta",
-    role: "Returning Customer",
-  },
-  {
-    quote:
-      "I needed a luxury gift with short notice. Their team suggested the perfect piece and shipped it the same day.",
-    author: "Arjun Kapoor",
-    role: "Corporate Buyer",
-  },
-];
 
-const blogPosts = [
-  {
-    title: "How to Choose Jewellery for Your Wedding Look",
-    image: "/images/post-1.jpg",
-    author: "Anaya Rao",
-    date: "May 1, 2026",
-  },
-  {
-    title: "Daily Jewellery Care Tips to Keep Pieces Brilliant",
-    image: "/images/post-2.jpg",
-    author: "Ishita Das",
-    date: "Apr 26, 2026",
-  },
-  {
-    title: "Layering Necklaces: Minimal to Occasion Styling",
-    image: "/images/post-3.jpg",
-    author: "Sana Malhotra",
-    date: "Apr 18, 2026",
-  },
-];
+function categoryImageSrc(image) {
+  if (!image || typeof image !== 'string') return '';
+  if (image.startsWith('http')) return image;
+  return image;
+}
 
-export default function Home() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeTestimonial, setActiveTestimonial] = useState(0);
-
-  const goToPreviousTestimonial = () =>
-    setActiveTestimonial((current) =>
-      current === 0 ? testimonials.length - 1 : current - 1,
-    );
-  const goToNextTestimonial = () =>
-    setActiveTestimonial((current) =>
-      current === testimonials.length - 1 ? 0 : current + 1,
-    );
-
+export default function HomePage() {
   return (
-    <div className="bg-[#fffaf5] text-[#2e1f1d]">
-      <header className="bg-[#2b211f] text-white">
-        <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
-          <Link href="/" className="text-2xl font-semibold tracking-wide">
-            Kyara Aura<span className="text-amber-300">.</span>
-          </Link>
+    <div>
+      <Header />
+      <HeroCarousel />
 
-          <ul className="hidden items-center gap-8 md:flex">
-            {navItems.map((item) => (
-              <li key={item}>
-                <a href="#" className="text-sm text-white/80 transition hover:text-white">
-                  {item}
-                </a>
-              </li>
-            ))}
-          </ul>
-
-          <div className="hidden items-center gap-4 md:flex">
-            <button aria-label="Account" className="rounded-full p-2 hover:bg-white/10">
-              <User size={18} />
-            </button>
-            <button aria-label="Cart" className="rounded-full p-2 hover:bg-white/10">
-              <ShoppingBag size={18} />
-            </button>
-          </div>
-
-          <button
-            aria-label="Toggle menu"
-            className="rounded-md p-2 md:hidden"
-            onClick={() => setIsMobileMenuOpen((current) => !current)}
-          >
-            {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </nav>
-
-        {isMobileMenuOpen && (
-          <div className="border-t border-white/10 px-6 py-4 md:hidden">
-            <ul className="space-y-3">
-              {navItems.map((item) => (
-                <li key={item}>
-                  <a href="#" className="block text-white/90">
-                    {item}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </header>
-
-      <main>
-        <section className="bg-[#2b211f] pb-14 pt-12 text-white">
-          <div className="mx-auto grid w-full max-w-6xl items-center gap-8 px-6 lg:grid-cols-2">
-            <div>
-              <h1 className="text-4xl font-semibold leading-tight md:text-5xl">
-                Timeless Jewellery <span className="block text-amber-300">for Every Story</span>
-              </h1>
-              <p className="mt-4 max-w-xl text-white/80">
-                Discover handcrafted rings, necklaces, and statement sets designed
-                to celebrate your moments with elegance.
-              </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <a
-                  href="#collections"
-                  className="rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-[#2b211f]"
-                >
-                  Shop Now
-                </a>
-                <a
-                  href="#story"
-                  className="rounded-full border border-white/50 px-6 py-3 text-sm font-semibold text-white"
-                >
-                  Explore
-                </a>
-              </div>
-            </div>
-            <div className="mx-auto w-full max-w-lg">
-              <Image
-                src="/images/couch.png"
-                alt="Jewellery collection hero visual"
-                width={820}
-                height={640}
-                className="h-auto w-full object-contain"
-                priority
-              />
-            </div>
-          </div>
-        </section>
-
-        <section id="collections" className="mx-auto w-full max-w-6xl px-6 py-16">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <div>
-              <h2 className="text-3xl font-semibold">Crafted with precious materials.</h2>
-              <p className="mt-4 text-[#6f5a55]">
-                Each piece is designed in-house with expert finishing and carefully
-                selected stones to create lasting sparkle.
-              </p>
-              <a
-                href="#"
-                className="mt-6 inline-flex rounded-full bg-[#2b211f] px-5 py-2 text-sm font-semibold text-white"
+      {/* Categories Section */}
+      <section className="max-w-7xl mx-auto px-4 py-20">
+        <h2 className="font-display text-2xl md:text-3xl text-gray-900 mb-3">Shop by Category</h2>
+        <p className="text-gold mb-10">
+          Explore our exquisite collections crafted for every occasion.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+          {mockCategories.map((c) => {
+            const src = categoryImageSrc(c.image);
+            return (
+              <Link
+                key={c._id}
+                href={`/products?category=${c._id}`}
+                className="group relative aspect-square rounded-lg overflow-hidden glass-card hover:shadow-gold-glow-sm transition-all duration-300 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-gold/50 focus:ring-offset-2 focus:ring-offset-white"
               >
-                Explore
-              </a>
-            </div>
-
-            {featuredCollections.map((product) => (
-              <a
-                key={product.name}
-                href="#"
-                className="group rounded-2xl border border-[#eaded6] bg-white p-4 text-center shadow-sm transition hover:-translate-y-1"
-              >
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  width={260}
-                  height={220}
-                  className="mx-auto h-48 w-auto object-contain"
-                />
-                <h3 className="mt-3 font-semibold">{product.name}</h3>
-                <p className="mt-1 text-[#7f675f]">{product.price}</p>
-                <span className="mt-3 inline-block rounded-full bg-[#f8efe8] px-4 py-1 text-sm text-[#4d3834] group-hover:bg-[#edd6c8]">
-                  Add to cart
-                </span>
-              </a>
-            ))}
-          </div>
-        </section>
-
-        <section className="bg-[#fff4ec] py-16">
-          <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 lg:grid-cols-2">
-            <div>
-              <h2 className="text-3xl font-semibold">Why Choose Us</h2>
-              <p className="mt-4 text-[#6f5a55]">
-                We blend premium artistry, transparent quality, and dedicated service
-                to make your jewellery experience seamless.
-              </p>
-              <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
-                {featureItems.map((feature) => (
-                  <article key={feature.title}>
-                    <Image src={feature.icon} alt="" width={34} height={34} />
-                    <h3 className="mt-3 font-semibold">{feature.title}</h3>
-                    <p className="mt-2 text-sm text-[#6f5a55]">{feature.description}</p>
-                  </article>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl bg-white p-4 shadow-sm">
-              <Image
-                src="/images/why-choose-us-img.jpg"
-                alt="Jewellery studio craftsmanship"
-                width={600}
-                height={700}
-                className="h-full w-full rounded-2xl object-cover"
-              />
-            </div>
-          </div>
-        </section>
-
-        <section id="story" className="mx-auto w-full max-w-6xl px-6 py-16">
-          <div className="grid gap-10 lg:grid-cols-2">
-            <div className="grid grid-cols-2 gap-4">
-              <Image
-                src="/images/img-grid-1.jpg"
-                alt="Jewellery detail"
-                width={360}
-                height={460}
-                className="h-full rounded-2xl object-cover"
-              />
-              <Image
-                src="/images/img-grid-2.jpg"
-                alt="Model styling jewellery"
-                width={360}
-                height={260}
-                className="rounded-2xl object-cover"
-              />
-              <Image
-                src="/images/img-grid-3.jpg"
-                alt="Jewellery boutique interior"
-                width={360}
-                height={260}
-                className="col-span-2 rounded-2xl object-cover"
-              />
-            </div>
-            <div>
-              <h2 className="text-3xl font-semibold">Jewellery that matches your moments</h2>
-              <p className="mt-4 text-[#6f5a55]">
-                From engagement ceremonies to daily elegance, our collection is curated
-                to help you style every occasion with confidence.
-              </p>
-              <ul className="mt-6 space-y-3 text-[#4d3834]">
-                <li>Certified diamonds and hallmark gold standards.</li>
-                <li>Custom sizing and personalized engraving options.</li>
-                <li>Hand-finished designs crafted by experienced artisans.</li>
-                <li>Secure packaging for gifting and safe doorstep delivery.</li>
-              </ul>
-              <a
-                href="#"
-                className="mt-6 inline-flex rounded-full bg-[#2b211f] px-5 py-2 text-sm font-semibold text-white"
-              >
-                Explore
-              </a>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-[#fff4ec] py-16">
-          <div className="mx-auto w-full max-w-6xl px-6">
-            <div className="grid gap-6 md:grid-cols-3">
-              {spotlightProducts.map((item) => (
-                <article key={item.title} className="flex items-start gap-4 rounded-2xl bg-white p-4 shadow-sm">
+                {src ? (
                   <Image
-                    src={item.image}
-                    alt={item.title}
-                    width={120}
-                    height={120}
-                    className="h-24 w-24 object-contain"
+                    src={src}
+                    alt={c.name}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
                   />
-                  <div>
-                    <h3 className="font-semibold">{item.title}</h3>
-                    <p className="mt-2 text-sm text-[#6f5a55]">{item.description}</p>
-                    <a href="#" className="mt-2 inline-block text-sm font-semibold text-[#6d3f33]">
-                      Read More
-                    </a>
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-gold/20 via-gray-50 to-gray-100 flex items-center justify-center p-4">
+                    <span className="font-display text-sm sm:text-lg text-gray-600/80 text-center">{c.name}</span>
                   </div>
-                </article>
-              ))}
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                <span className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 font-medium text-white text-xs sm:text-sm text-center">
+                  {c.name}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Welcome Section */}
+      <section className="relative w-full h-[400px] md:h-[500px] flex items-center justify-center overflow-hidden">
+
+        {/* Light rose gold background/effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-rose-50 via-white to-rose-100/30" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(212,163,115,0.08),transparent_60%)]" />
+
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+              src="/welcomeiamge.png"
+              alt="Welcome"
+              fill
+              className="object-cover opacity-20"
+              priority
+          />
+        </div>
+
+        {/* Light overlay for better text visibility */}
+        <div className="absolute inset-0 bg-white/70" />
+
+        {/* Content */}
+        <div className="relative z-10 max-w-4xl text-center px-4">
+          <h2 className="font-display text-3xl md:text-5xl text-gray-900 mb-6">
+            Welcome to Kyara-Aura
+          </h2>
+
+          <p className="text-gray-600 text-sm md:text-base leading-relaxed">
+            Welcome to Kyara-Aura, where timeless elegance meets modern craftsmanship. Our curated collection of fine jewellery celebrates life's most precious moments with pieces that tell your unique story. Each creation is meticulously crafted with the finest materials and attention to detail, ensuring that every piece becomes a cherished heirloom. At Kyara-Aura, we believe that jewellery is not just an accessory, but a symbol of love, achievement, and personal style that empowers your journey and marks your milestones with grace and sophistication.
+          </p>
+        </div>
+      </section>
+
+      {/* Featured Products Section */}
+      <section className="max-w-7xl mx-auto px-4 py-20">
+        <div className="flex justify-between items-end mb-8">
+          <h2 className="font-display text-2xl md:text-3xl text-gray-900">Featured</h2>
+          <Link href="/products" className="text-sm text-gold hover:text-gold-light transition-colors">
+            View all
+          </Link>
+        </div>
+        {mockProducts.length ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+            {mockProducts.map((p) => (
+              <ProductCard key={p._id} product={p} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-600 py-12 text-center">
+            No featured products available at the moment.
+          </p>
+        )}
+      </section>
+
+      
+      {/* Most Wishlisted Section */}
+      {mockMostWishlisted.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 py-20 border-t border-gray-200 bg-gray-50/50">
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <p className="text-gold text-xs tracking-[0.25em] uppercase mb-2">Community picks</p>
+              <h2 className="font-display text-2xl md:text-3xl text-gray-900">Most wishlisted</h2>
             </div>
+            <Link href="/products" className="text-sm text-gold hover:text-gold-light transition-colors">
+              Shop all
+            </Link>
           </div>
-        </section>
-
-        <section className="mx-auto w-full max-w-4xl px-6 py-16 text-center">
-          <h2 className="text-3xl font-semibold">Testimonials</h2>
-          <div className="mt-8 rounded-3xl border border-[#ecdccf] bg-white p-8 shadow-sm">
-            <p className="text-lg leading-8 text-[#523b35]">{testimonials[activeTestimonial].quote}</p>
-            <p className="mt-6 text-base font-semibold">{testimonials[activeTestimonial].author}</p>
-            <p className="text-sm text-[#8b716b]">{testimonials[activeTestimonial].role}</p>
-            <div className="mt-6 flex justify-center gap-3">
-              <button
-                aria-label="Previous testimonial"
-                onClick={goToPreviousTestimonial}
-                className="rounded-full border border-[#dbc8bb] p-2 text-[#5e443d] hover:bg-[#f9f1eb]"
-              >
-                <ChevronLeft size={18} />
-              </button>
-              <button
-                aria-label="Next testimonial"
-                onClick={goToNextTestimonial}
-                className="rounded-full border border-[#dbc8bb] p-2 text-[#5e443d] hover:bg-[#f9f1eb]"
-              >
-                <ChevronRight size={18} />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <section className="mx-auto w-full max-w-6xl px-6 pb-20">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-            <h2 className="text-3xl font-semibold">Recent Journal</h2>
-            <a href="#" className="font-semibold text-[#6d3f33]">
-              View All Posts
-            </a>
-          </div>
-
-          <div className="grid gap-6 md:grid-cols-3">
-            {blogPosts.map((post) => (
-              <article key={post.title} className="overflow-hidden rounded-2xl bg-white shadow-sm">
-                <Image
-                  src={post.image}
-                  alt={post.title}
-                  width={420}
-                  height={260}
-                  className="h-52 w-full object-cover"
-                />
-                <div className="p-5">
-                  <h3 className="font-semibold">{post.title}</h3>
-                  <p className="mt-2 text-sm text-[#8b716b]">
-                    by {post.author} on {post.date}
-                  </p>
-                </div>
-              </article>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+            {mockMostWishlisted.map((p) => (
+              <ProductCard key={p._id} product={p} />
             ))}
           </div>
         </section>
-      </main>
+      )}
 
-      <footer className="bg-[#2b211f] text-white">
-        <div className="mx-auto w-full max-w-6xl px-6 py-14">
-          <div className="mb-10 grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
-            <h3 className="text-2xl font-semibold">Subscribe to our newsletter</h3>
-            <form className="flex flex-wrap gap-3">
-              <input
-                type="text"
-                placeholder="Enter your name"
-                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm placeholder:text-white/60"
-              />
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm placeholder:text-white/60"
-              />
-              <button
-                type="button"
-                className="rounded-full bg-amber-300 px-5 py-2 text-sm font-semibold text-[#2b211f]"
-              >
-                Subscribe
-              </button>
-            </form>
           </div>
-
-          <div className="grid gap-8 border-y border-white/15 py-10 md:grid-cols-2 lg:grid-cols-5">
-            <div className="lg:col-span-2">
-              <p className="text-2xl font-semibold">Kyara Aura.</p>
-              <p className="mt-4 max-w-md text-sm text-white/75">
-                Premium jewellery for modern celebrations. Designed with care, crafted
-                for elegance, and made to shine for years.
-              </p>
-              <div className="mt-5 flex gap-3">
-                <a href="#" className="rounded-full border border-white/20 p-2 text-white/80">
-                  <Gem size={16} />
-                </a>
-                <a href="#" className="rounded-full border border-white/20 p-2 text-white/80">
-                  <Sparkles size={16} />
-                </a>
-              </div>
-            </div>
-
-            <ul className="space-y-2 text-sm text-white/80">
-              <li><a href="#">About us</a></li>
-              <li><a href="#">Services</a></li>
-              <li><a href="#">Journal</a></li>
-              <li><a href="#">Contact us</a></li>
-            </ul>
-            <ul className="space-y-2 text-sm text-white/80">
-              <li><a href="#">Support</a></li>
-              <li><a href="#">Knowledge base</a></li>
-              <li><a href="#">Live chat</a></li>
-            </ul>
-            <ul className="space-y-2 text-sm text-white/80">
-              <li><a href="#">Bridal Collection</a></li>
-              <li><a href="#">Diamond Rings</a></li>
-              <li><a href="#">Signature Pendants</a></li>
-            </ul>
-          </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-white/70">
-            <p>Copyright {new Date().getFullYear()}. All Rights Reserved.</p>
-            <div className="flex gap-4">
-              <a href="#">Terms & Conditions</a>
-              <a href="#">Privacy Policy</a>
-            </div>
-          </div>
-        </div>
-      </footer>
-    </div>
   );
 }
