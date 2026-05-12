@@ -36,7 +36,19 @@ export default function ProductCard({ product }) {
         
         {/* Price Section */}
         <div className="mt-1.5 sm:mt-2 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-          <p className="text-sm font-semibold text-gold">${product.price}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-gold">₹{product.price}</p>
+            {product.oldPrice && (
+              <>
+                <p className="text-xs text-gray-500 line-through">₹{product.oldPrice}</p>
+                {product.discount && (
+                  <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-xs font-semibold">
+                    {product.discount}% OFF
+                  </span>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Add to Bag Button */}
