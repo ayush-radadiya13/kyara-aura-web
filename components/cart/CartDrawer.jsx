@@ -97,19 +97,19 @@ export default function CartDrawer({ open, onClose, isLoading = false, error = '
 
         <div className="flex-1 overflow-y-auto px-4">
           {(error || actionError) && (
-            <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="mb-4 rounded border border-red-200 bg-red-50 px-3 py-2 text-base text-red-700">
               {error || actionError}
             </p>
           )}
 
           {isLoading && items.length === 0 ? (
-            <p className="py-8 text-sm text-gray-600">Loading bag...</p>
+            <p className="py-8 text-base text-gray-600">Loading bag...</p>
           ) : items.length === 0 ? (
             <div className="py-10 text-center">
-              <p className="text-sm text-gray-600">Your bag is empty.</p>
+              <p className="text-base text-gray-600">Your bag is empty.</p>
               <Link
                 href={APP_ROUTES.PRODUCTS}
-                className="mt-3 inline-block text-sm font-semibold text-gray-900 underline underline-offset-2"
+                className="mt-3 inline-block text-base font-semibold text-primary underline underline-offset-2 hover:text-primary/80"
                 onClick={onClose}
               >
                 Continue shopping
@@ -129,7 +129,7 @@ export default function CartDrawer({ open, onClose, isLoading = false, error = '
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start gap-2">
-                        <p className="min-w-0 flex-1 text-sm font-bold leading-tight text-gray-950">
+                        <p className="min-w-0 flex-1 text-base font-bold leading-tight text-gray-950">
                           {item.title}
                           {item.sizeLabel ? ` (${item.sizeLabel})` : ''}
                         </p>
@@ -144,25 +144,25 @@ export default function CartDrawer({ open, onClose, isLoading = false, error = '
                         </button>
                       </div>
 
-                      <p className="mt-1 text-xs font-semibold text-gray-950">
+                      <p className="mt-1 text-base font-semibold text-gray-950">
                         Size: {item.sizeLabel || item.size} / Qty: {item.quantity}
                       </p>
-                      <p className="mt-1 text-sm font-bold text-gray-950">{formatInr(lineTotal)}</p>
+                      <p className="mt-1 text-base font-bold text-gray-950">{formatInr(lineTotal)}</p>
 
-                      <div className="mt-3 inline-flex h-7 items-center border border-gray-950">
+                      <div className="mt-3 inline-flex h-8 items-center border border-gray-950 text-gray-950">
                         <button
                           type="button"
-                          className="h-full px-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                          className="h-full px-2 text-base font-medium disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="Decrease quantity"
                           onClick={() => handleQuantityChange(item, Math.max(0, item.quantity - 1))}
                           disabled={disabled}
                         >
                           -
                         </button>
-                        <span className="min-w-8 px-2 text-center text-sm font-semibold">{item.quantity}</span>
+                        <span className="min-w-8 px-2 text-center text-base font-semibold">{item.quantity}</span>
                         <button
                           type="button"
-                          className="h-full px-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                          className="h-full px-2 text-base font-medium disabled:cursor-not-allowed disabled:opacity-50"
                           aria-label="Increase quantity"
                           onClick={() => handleQuantityChange(item, item.quantity + 1)}
                           disabled={disabled}
@@ -179,7 +179,7 @@ export default function CartDrawer({ open, onClose, isLoading = false, error = '
         </div>
 
         <div className="border-t border-gray-100 px-4 py-4">
-          <div className="mb-3 flex items-center justify-between text-sm font-bold text-gray-950">
+          <div className="mb-3 flex items-center justify-between text-base font-bold text-gray-950">
             <span>Subtotal: ({visibleCount} {visibleCount === 1 ? 'item' : 'items'})</span>
             <span>{formatInr(visibleTotal)}</span>
           </div>
@@ -187,14 +187,14 @@ export default function CartDrawer({ open, onClose, isLoading = false, error = '
           <Link
             href={APP_ROUTES.CART}
             onClick={onClose}
-            className="mb-2 block w-full border border-[#4a2a24] py-2.5 text-center text-sm font-bold text-[#4a2a24] transition-colors hover:bg-[#4a2a24] hover:text-white"
+            className="mb-2 block w-full border border-gray-950 py-2.5 text-center text-base font-bold text-gray-950 transition-colors hover:bg-gray-950 hover:text-white"
           >
             View Bag
           </Link>
           <Link
             href={APP_ROUTES.CART}
             onClick={onClose}
-            className="block w-full bg-[#4a2a24] py-3 text-center text-sm font-bold text-white transition-colors hover:bg-[#3a201c]"
+            className="block w-full bg-gray-950 py-3 text-center text-base font-bold text-white transition-colors hover:bg-gray-800"
           >
             Checkout
           </Link>

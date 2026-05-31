@@ -33,7 +33,7 @@ const MOBILE_ICON_ITEMS = [
   { label: 'Wishlist', href: APP_ROUTES.WISHLIST, Icon: Heart },
 ];
 
-export default function Header() {
+export default function Header({ variant = 'default' }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -47,6 +47,22 @@ export default function Header() {
     wishCount,
   };
   const showAuthenticatedActions = isHydrated && isAuthenticated;
+  const isHomeOverlay = variant === 'homeOverlay';
+  const headerClassName = isHomeOverlay
+    ? 'fixed inset-x-0 top-0 z-50 border-b border-black/10 bg-transparent text-black'
+    : 'fixed inset-x-0 top-0 z-50 header-glass border-b border-gray-200/50';
+  const shellClassName = isHomeOverlay
+    ? 'max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between'
+    : 'max-w-8xl mx-auto px-4 h-16 flex items-center justify-between';
+  const logoClassName = isHomeOverlay
+    ? 'font-display text-lg tracking-[0.2em] text-black transition-colors duration-300 hover:text-black/70'
+    : 'font-display text-xl tracking-wide text-gray-900 hover:text-gold transition-colors duration-300';
+  const navLinkClassName = isHomeOverlay
+    ? 'text-[14px] font-semibold uppercase tracking-[0.18em] text-black/85 hover:text-black transition-colors'
+    : 'text-gray-700 hover:text-gold transition-colors';
+  const iconClassName = isHomeOverlay
+    ? 'text-black/85 hover:text-black transition-colors'
+    : 'text-gray-600 hover:text-gold transition-colors';
 
   useEffect(() => {
     if (!showAuthenticatedActions) return;
@@ -99,35 +115,62 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-gray-200/50">
-      <div className="max-w-8xl mx-auto px-4 h-16 flex items-center justify-between">
+    <>
+      <header className={headerClassName}>
+        <div className={shellClassName}>
 
         {/* LEFT - Logo */}
-        <div className="flex-shrink-0">
-          <Link
-            href={APP_ROUTES.HOME}
-            className="font-display text-xl tracking-wide text-gray-900 hover:text-gold transition-colors duration-300"
-          >
-            Kyara<span className="text-gold">-Aura</span>
-          </Link>
+        <div className={isHomeOverlay ? 'hidden md:block md:w-6/12' : 'flex-shrink-0'}>
+          {isHomeOverlay ? (
+            <nav className="flex items-center gap-8">
+              {NAV_ITEMS.slice(1, 5).map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={navLinkClassName}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          ) : (
+            <Link
+              href={APP_ROUTES.HOME}
+              className={logoClassName}
+            >
+              Kyara<span className="text-gold">-Aura</span>
+            </Link>
+          )}
         </div>
 
-        {/* CENTER - Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-10 text-sm font-medium">
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-gray-700 hover:text-gold transition-colors"
-            >
-              {item.label}
+        {isHomeOverlay && (
+          <div className="flex flex-1 justify-start md:flex-none md:justify-center">
+            <Link href={APP_ROUTES.HOME} className={logoClassName}>
+              Kyara<span className="text-black">-Aura</span>
             </Link>
-          ))}
-        </nav>
+          </div>
+        )}
+
+        {/* CENTER - Desktop Navigation */}
+        {!isHomeOverlay && (
+          <nav className="hidden md:flex items-center gap-10 text-sm font-medium">
+            {NAV_ITEMS.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={navLinkClassName}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </nav>
+        )}
 
         {/* RIGHT - Desktop Actions */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className={isHomeOverlay ? 'hidden md:flex md:w-5/12 items-center justify-end gap-4' : 'hidden md:flex items-center gap-4'}>
+
           {HEADER_ICON_ITEMS.map(({ key, label, href, Icon, type, countKey }) => {
+
             const itemCount = countKey ? actionCounts[countKey] : 0;
 
             if (type === 'button') {
@@ -135,7 +178,7 @@ export default function Header() {
                 <button
                   key={key}
                   type="button"
-                  className="text-gray-600 hover:text-gold transition-colors"
+                  className={iconClassName}
                   aria-label={label}
                 >
                   <Icon className="h-5 w-5" />
@@ -147,7 +190,7 @@ export default function Header() {
               <Link
                 key={key}
                 href={href}
-                className="relative hover:text-gold transition-colors"
+                className={`relative ${isHomeOverlay ? 'hover:text-black' : 'hover:text-gold'} transition-colors`}
                 aria-label={itemCount > 0 ? `${label}, ${itemCount} items` : label}
               >
                 <Icon className="h-5 w-5" />
@@ -165,7 +208,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setAccountOpen(!accountOpen)}
-              className="text-gray-600 hover:text-gold transition-colors"
+              className={iconClassName}
               aria-label="Account"
             >
               <User className="h-5 w-5" />
@@ -187,7 +230,7 @@ export default function Header() {
           {/* Search */}
           <button
             type="button"
-            className="text-gray-600 hover:text-gold transition-colors"
+            className={iconClassName}
             aria-label="Search"
           >
             <Search className="h-5 w-5" />
@@ -196,12 +239,12 @@ export default function Header() {
           {/* Cart */}
           <Link
             href={APP_ROUTES.CART}
-            className="relative hover:text-gold transition-colors"
+            className={`relative ${isHomeOverlay ? 'hover:text-black' : 'hover:text-gold'} transition-colors`}
             aria-label={count > 0 ? `Cart, ${count} items` : 'Cart'}
           >
             <ShoppingBag className="h-5 w-5" />
             {count > 0 && (
-              <span className="absolute -top-1 -right-1 text-xs font-semibold bg-gold text-white rounded-full h-4 w-4 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 text-xs bg-black rounded-full font-semibold bg-gold text-white  h-4 w-4 flex items-center justify-center">
                 {count > 99 ? '99+' : count}
               </span>
             )}
@@ -211,7 +254,7 @@ export default function Header() {
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="text-gray-600 hover:text-gold transition-colors"
+            className={iconClassName}
             aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -261,6 +304,8 @@ export default function Header() {
           </nav>
         </div>
       )}
-    </header>
+      </header>
+      {!isHomeOverlay && <div aria-hidden="true" className="h-16 shrink-0" />}
+    </>
   );
 }

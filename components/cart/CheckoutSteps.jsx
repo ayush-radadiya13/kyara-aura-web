@@ -1,7 +1,6 @@
 const STEPS = [
-  { id: 1, label: 'Login' },
-  { id: 2, label: 'Address' },
-  { id: 3, label: 'Payment' },
+  { id: 1, label: 'Login / Register' },
+  { id: 2, label: 'Payment Method' },
 ];
 
 /**
@@ -11,34 +10,34 @@ export default function CheckoutSteps({ activeStep = 1 }) {
   return (
     <nav
       aria-label="Checkout progress"
-      className="flex items-start justify-center gap-10 sm:gap-16"
+      className="flex items-start justify-center gap-6 sm:gap-10"
     >
       {STEPS.map((step) => {
         const isActive = step.id === activeStep;
         const isComplete = step.id < activeStep;
 
         return (
-          <div key={step.id} className="flex flex-col items-center gap-2 min-w-[72px]">
+          <div key={step.id} className="flex min-w-[112px] flex-col items-center gap-2">
             <div
-              className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-semibold transition-colors ${
+              className={`flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold shadow-sm transition-colors ${
                 isActive || isComplete
-                  ? 'border-gray-900 bg-gray-900 text-white'
-                  : 'border-gray-300 bg-white text-gray-500'
+                  ? 'border-[#6aab8e] bg-[#6aab8e] text-white'
+                  : 'border-gray-200 bg-white text-gray-500'
               }`}
             >
               {step.id}
             </div>
             <span
-              className={`text-sm font-medium ${
+              className={`text-center text-sm font-semibold ${
                 isActive ? 'text-gray-900' : 'text-gray-500'
               }`}
             >
               {step.label}
             </span>
             {isActive ? (
-              <span className="h-0.5 w-full max-w-[88px] bg-gray-900 rounded-full" aria-hidden />
+              <span className="h-1 w-full max-w-[96px] rounded-full bg-[#6aab8e]" aria-hidden />
             ) : (
-              <span className="h-0.5 w-full max-w-[88px] rounded-full" aria-hidden />
+              <span className="h-1 w-full max-w-[96px] rounded-full bg-gray-100" aria-hidden />
             )}
           </div>
         );

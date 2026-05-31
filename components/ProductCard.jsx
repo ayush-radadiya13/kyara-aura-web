@@ -1,10 +1,74 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag } from 'lucide-react';
+import { Heart, ShoppingBag } from 'lucide-react';
 
-export default function ProductCard({ product }) {
+export default function ProductCard({ product, variant = 'default' }) {
   const href = `/products/${product.slug}`;
   const originalPrice = product.oldPrice ?? product.originalPrice;
+
+  if (variant === 'editorial' || variant === 'catalog') {
+    const isCatalog = variant === 'catalog';
+
+    return (
+      <div className="group relative block">
+        <div className="relative aspect-square overflow-hidden bg-[#faf9f7]">
+          <Link href={href} className="absolute inset-0 z-[1]" aria-label={product.name} />
+          {product.discount > 0 && (
+            <span className={`${isCatalog ? 'bg-[#d3b987] text-white' : 'bg-gray-950 text-white'} absolute left-5 top-5 z-20 px-3 py-2 text-[12px] font-medium`}>
+              -{product.discount}%
+            </span>
+          )}
+          <div className="absolute right-5 top-5 z-20 flex flex-col gap-3 opacity-100 transition md:opacity-0 md:group-hover:opacity-100">
+            {[
+              { label: 'Add to wishlist', Icon: Heart },
+            ].map(({ label, Icon }) => (
+              <button
+                key={label}
+                type="button"
+                aria-label={label}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-800 shadow-sm transition hover:bg-gray-950 hover:text-white"
+              >
+                <Icon className="h-4 w-4" />
+              </button>
+            ))}
+          </div>
+
+          <div className="relative flex h-full w-full items-center justify-center p-8">
+            {product.images?.[0] ? (
+              <Image
+                src={product.images[0]}
+                alt={product.name}
+                fill
+                className="object-contain p-7 transition duration-500 group-hover:scale-[1.03]"
+                sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
+              />
+            ) : (
+              <span className="text-xs text-gray-400">No image</span>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className={`${isCatalog ? 'inset-x-5 bottom-5 bg-white py-2 text-gray-950 shadow-sm' : 'inset-x-0 bottom-0 bg-gray-950 py-4 text-white'} absolute z-20 translate-y-full text-sm font-semibold uppercase  transition duration-300 group-hover:translate-y-0`}
+          >
+            Add to Cart
+          </button>
+        </div>
+
+        <div className={isCatalog ? 'pt-4' : 'pt-5'}>
+          <h3 className={`${isCatalog ? 'text-[15px]' : 'text-md'} font-semibold text-gray-950 transition group-hover:text-gray-600`}>
+            <Link href={href}>{product.name}</Link>
+          </h3>
+          <div className={`${isCatalog ? 'mt-2 text-[13px]' : 'mt-2 text-md'} flex items-center gap-2`}>
+            <p className="font-medium text-gray-700">₹{product.price?.toLocaleString('en-IN')}</p>
+            {originalPrice && originalPrice > product.price && (
+              <p className="text-gray-400 line-through">₹{originalPrice.toLocaleString('en-IN')}</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="group block rounded-lg glass-card overflow-hidden hover:shadow-gold-glow-sm transition-all duration-300 hover:scale-[1.02]">

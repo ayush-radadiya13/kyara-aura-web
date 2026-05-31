@@ -1,6 +1,7 @@
+import { Suspense } from 'react';
 import Header from '../../components/Header';
-import CategoryGrid from '@/components/CategoryGrid';
-import ProductList from '@/components/ProductList';
+import CategoryBrowser from '@/components/CategoryBrowser';
+import { LoaderBlock } from '@/components/ui/loader';
 
 export default function CategoriesPage() {
   return (
@@ -19,23 +20,9 @@ export default function CategoriesPage() {
         </div>
       </section>
 
-      {/* Categories Grid Section */}
-      <section className="max-w-7xl mx-auto px-4 pb-16">
-        <CategoryGrid />
-      </section>
-
-      {/* Featured Products Section */}
-      <section className="max-w-7xl mx-auto px-4 pb-20 border-t border-gray-200 bg-gray-50/50">
-        <div className="text-center mb-12">
-          <h2 className="font-display text-2xl md:text-3xl text-gray-900 mb-4">
-            Featured Products
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Handpicked pieces from our collection that showcase the finest craftsmanship and design
-          </p>
-        </div>
-        <ProductList featured />
-      </section>
+      <Suspense fallback={<LoaderBlock />}>
+        <CategoryBrowser />
+      </Suspense>
     </div>
   );
 }

@@ -2,7 +2,7 @@ import Header from '@/components/Header';
 import AuthForm from '@/components/auth/AuthForm';
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout';
 import { getAuthFieldKeys } from '@/lib/auth/get-auth-field-keys';
-import { AUTH_PAGE_ROUTES } from '@/lib/routes';
+import { AUTH_PAGE_ROUTES, withRedirect } from '@/lib/routes';
 
 export const metadata = {
   title: 'Create Account | Kyara Aura',
@@ -34,7 +34,7 @@ export default async function RegisterPage({ searchParams }) {
             title="Create New Account"
             subtitle=""
             submitLabel="Create Account"
-            footerHref={AUTH_PAGE_ROUTES.LOGIN}
+            footerHref={withRedirect(AUTH_PAGE_ROUTES.LOGIN, redirectTo)}
             footerText="Already have an account?"
             footerLinkText="Login"
             redirectTo={redirectTo}

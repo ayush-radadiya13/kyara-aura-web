@@ -1,4 +1,6 @@
+
 import Header from '../../components/Header';
+import ProductCategoryNav from '@/components/ProductCategoryNav';
 import ProductList from '@/components/ProductList';
 
 export default async function ProductsPage({ searchParams }) {
@@ -8,24 +10,23 @@ export default async function ProductsPage({ searchParams }) {
     : params?.category;
 
   return (
-    <div>
+    <div className="bg-white text-gray-950">
       <Header />
-      
-      {/* Page Title and Description Section */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h1 className="font-display text-3xl md:text-4xl text-gray-900 mb-4">
-            Our Collection
-          </h1>
-          <p className="text-gray-600 text-lg max-w-3xl mx-auto leading-relaxed">
-            Discover our exquisite collection of fine jewellery, where each piece is meticulously crafted with precision and passion. From timeless classics to contemporary designs, find the perfect expression of your unique style.
-          </p>
-        </div>
-      </section>
 
-      {/* Products Grid Section */}
-      <section className="max-w-7xl mx-auto px-4 pb-20">
-        <ProductList categoryId={categoryId} />
+      <section className="mx-auto max-w-7xl px-4 pb-16 pt-8 sm:px-6 lg:pb-24">
+        <div className="mb-8 text-center">
+          <h1 className="font-display text-4xl font-light text-gray-950 md:text-5xl">
+            Products
+          </h1>
+
+          <ProductCategoryNav activeCategoryId={categoryId} />
+        </div>
+
+        <ProductList
+          categoryId={categoryId}
+          pageSize={16}
+          variant="catalog"
+        />
       </section>
     </div>
   );
