@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { AUTH_COOKIE_KEY } from "@/lib/constants";
 
-const guestOnlyPaths = ["/login", "/register"];
 const protectedPaths = ["/account", "/wishlist"];
 
 function isProtectedPath(pathname) {
@@ -10,13 +9,7 @@ function isProtectedPath(pathname) {
   );
 }
 
-function isGuestOnlyPath(pathname) {
-  return guestOnlyPaths.some(
-    (path) => pathname === path || pathname.startsWith(`${path}/`)
-  );
-}
-
-export function middleware(request) {
+export function proxy(request) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get(AUTH_COOKIE_KEY)?.value;
 
@@ -26,13 +19,9 @@ export function middleware(request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isGuestOnlyPath(pathname) && token) {
-    return NextResponse.redirect(new URL("/", request.url));
-  }
-
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/login", "/register", "/account/:path*", "/wishlist/:path*"],
+  matcher: ["/account/:path*", "/wishlist/:path*"],
 };

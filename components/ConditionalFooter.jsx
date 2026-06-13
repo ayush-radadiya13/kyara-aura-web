@@ -7,6 +7,8 @@ const HIDDEN_FOOTER_ROUTES = new Set([
   '/login',
   '/register',
   '/forgot-password',
+  '/orders',
+  '/payment-method',
 ]);
 
 export default function ConditionalFooter() {

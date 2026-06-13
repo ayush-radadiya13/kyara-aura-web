@@ -4,21 +4,29 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Drawer } from '@base-ui/react/drawer';
 import {
   BadgeCheck,
   CircleCheck,
   CreditCard,
   Edit3,
   Gem,
+  Home,
+  Mail,
+  MapPin,
+  PackageCheck,
+  Phone,
   Plus,
+  ReceiptText,
   ShieldCheck,
   Star,
   Trash2,
   Truck,
   Wallet,
+  X,
   XCircle,
 } from 'lucide-react';
-import CheckoutSteps from '@/components/cart/CheckoutSteps';
+import { LoaderBlock, LoadingLabel } from '@/components/ui/loader';
 import { formatInr } from '@/lib/cart/format';
 import { useCartStore } from '@/lib/cart/store';
 import { APP_ROUTES, AUTH_PAGE_ROUTES, withRedirect } from '@/lib/routes';
@@ -99,6 +107,47 @@ function getSelectedAddress(addresses) {
 
 function getSummaryTotal(summary) {
   return Number(summary?.total_amount ?? summary?.total ?? 0);
+}
+
+function getItemQuantity(item) {
+  const quantity = Number(item?.quantity);
+  return Number.isFinite(quantity) ? quantity : 0;
+}
+
+function getItemTotal(item) {
+  const rawTotal = item?.total ?? item?.line_total ?? item?.subtotal ?? item?.amount;
+  if (rawTotal === undefined || rawTotal === null) return null;
+
+  const total = Number(rawTotal);
+  return Number.isFinite(total) ? total : null;
+}
+
+function getItemUnitPrice(item) {
+  const rawPrice = item?.price ?? item?.unit_price ?? item?.selling_price;
+  if (rawPrice !== undefined && rawPrice !== null) {
+    const price = Number(rawPrice);
+    return Number.isFinite(price) ? price : null;
+  }
+
+  const quantity = getItemQuantity(item);
+  const total = getItemTotal(item);
+  return quantity > 0 && total !== null ? total / quantity : null;
+}
+
+function getItemOriginalPrice(item) {
+  const rawPrice = item?.mrp ?? item?.original_price ?? item?.regular_price ?? item?.list_price;
+  if (rawPrice === undefined || rawPrice === null) return null;
+
+  const price = Number(rawPrice);
+  return Number.isFinite(price) ? price : null;
+}
+
+function getAddressText(address) {
+  if (!address) return '';
+
+  return [address.address_line_1, address.address_line_2, address.city, address.state, address.postal_code, address.country]
+    .filter(Boolean)
+    .join(', ');
 }
 
 function getAddressPayload(addressForm) {
@@ -307,10 +356,16 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
     setShowAddressForm(true);
   };
 
-  const resetAddressForm = () => {
+  const openNewAddressDrawer = () => {
     setEditingAddressId(null);
     setAddressForm(EMPTY_ADDRESS_FORM);
-    setShowAddressForm((value) => !value);
+    setShowAddressForm(true);
+  };
+
+  const closeAddressDrawer = () => {
+    setEditingAddressId(null);
+    setAddressForm(EMPTY_ADDRESS_FORM);
+    setShowAddressForm(false);
   };
 
   const refreshAddresses = async (addressIdToSelect) => {
@@ -395,7 +450,7 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
           },
         },
         theme: {
-          color: '#4f3128',
+          color: '#111827',
         },
       });
 
@@ -454,7 +509,7 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
   if (!isHydrated || (isAuthenticated && loading)) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-16 text-center">
-        <p className="text-sm font-semibold text-gray-600">Loading secure checkout...</p>
+        <LoaderBlock />
       </div>
     );
   }
@@ -462,15 +517,15 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
   if (!isAuthenticated) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 text-center">
-        <div className="rounded-[2rem] border border-gray-100 bg-white p-8 shadow-[0_20px_60px_rgba(17,24,39,0.08)]">
-          <ShieldCheck className="mx-auto h-12 w-12 text-[#4f3128]" />
+        <div className="rounded-xl border border-gray-200 bg-white p-6">
+          <ShieldCheck className="mx-auto h-12 w-12 text-gray-950" />
           <h1 className="mt-5 text-3xl font-bold text-gray-950">Sign in to checkout</h1>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
             Checkout, addresses, orders, and Razorpay verification are protected. Please login before placing an order.
           </p>
           <Link
             href={withRedirect(AUTH_PAGE_ROUTES.LOGIN, APP_ROUTES.PAYMENT_METHOD)}
-            className="mt-7 inline-flex h-12 items-center justify-center bg-[#4f3128] px-7 text-sm font-bold text-white transition hover:bg-[#3d261f]"
+            className="mt-7 inline-flex h-12 items-center justify-center bg-gray-950 px-7 text-sm font-bold text-white transition hover:bg-gray-800"
           >
             Login to Continue
           </Link>
@@ -480,22 +535,22 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
   }
 
   return (
-    <div className="bg-white pb-24">
-      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:py-10">
-        <div className="mb-8">
-          <CheckoutSteps activeStep={2} />
+    <div className="min-h-screen bg-white pb-24">
+      <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:py-7">
+        <div className="mb-5">
+          <h1 className="text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl">
+            Payment Method
+          </h1>
         </div>
 
         {(error || paymentNotice || (checkoutIntent.checkout_type === 'buy_now' && !checkoutIntent.product_size_id)) ? (
-          <div className="mb-6 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <div className="mb-5 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm font-semibold text-red-700">
             {error || paymentNotice || 'Buy now checkout is missing a selected product size.'}
           </div>
         ) : null}
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start">
-          <ProductDetailsSection items={displayItems} visibleCount={visibleCount} hasSummary={hasSummary} summaryLoading={summaryLoading} />
-
-          <div className="space-y-6 lg:sticky lg:top-24">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px] xl:items-start">
+          <div className="space-y-4">
             <AddressSection
               addresses={addresses}
               selectedAddressId={selectedAddressId}
@@ -506,7 +561,8 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
               savingAddress={savingAddress}
               addressActionId={addressActionId}
               onSelectAddress={setSelectedAddressId}
-              onToggleForm={resetAddressForm}
+              onOpenNewAddress={openNewAddressDrawer}
+              onCloseDrawer={closeAddressDrawer}
               onAddressFieldChange={setAddressField}
               onAddressSubmit={handleAddressSubmit}
               onEditAddress={startAddressEdit}
@@ -514,6 +570,10 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
               onSetDefaultAddress={handleSetDefaultAddress}
             />
 
+            <ProductDetailsSection items={displayItems} visibleCount={visibleCount} hasSummary={hasSummary} summaryLoading={summaryLoading} />
+          </div>
+
+          <aside className="space-y-3 rounded-2xl border border-gray-200 bg-white p-3 xl:sticky xl:top-24">
             <PaymentMethodSection selectedMethod={selectedMethod} onSelectMethod={setSelectedMethod} />
 
             <BillDetails
@@ -522,7 +582,7 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
               summaryLoading={summaryLoading}
             />
 
-            <section className="rounded-none border border-gray-200 bg-white p-5">
+            <section className="rounded-xl border border-gray-200 bg-white p-4">
               <label htmlFor="order-notes" className="text-sm font-bold text-gray-950">
                 Order notes
               </label>
@@ -530,19 +590,19 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
                 id="order-notes"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
-                rows={3}
+                rows={2}
                 placeholder="Gift packing or delivery instructions"
-                className="mt-3 w-full resize-none border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-gray-950"
+                className="mt-3 w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-gray-950"
               />
             </section>
 
-            <div className="grid grid-cols-3 gap-3 border-y border-gray-200 py-7">
+            <div className="grid grid-cols-3 gap-2 rounded-xl border border-gray-200 bg-white p-3">
               {TRUST_POINTS.map(({ label, Icon }) => (
                 <div key={label} className="text-center">
-                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-[#d4a373] bg-[#1f2a44] text-[#d4a373]">
-                    <Icon className="h-6 w-6" />
+                  <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-900">
+                    <Icon className="h-4 w-4" />
                   </div>
-                  <p className="mt-3 text-xs font-bold text-gray-950 sm:text-sm">{label}</p>
+                  <p className="mt-2 text-[11px] font-bold leading-4 text-gray-950">{label}</p>
                 </div>
               ))}
             </div>
@@ -555,11 +615,11 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
               onClick={handlePlaceOrder}
               className="hidden lg:flex"
             />
-          </div>
+          </aside>
         </div>
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white px-4 py-3 shadow-[0_-12px_30px_rgba(17,24,39,0.08)] lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white px-4 py-3 lg:hidden">
         <div className="mx-auto max-w-6xl">
           <CheckoutAction
             total={payableTotal}
@@ -578,86 +638,102 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
 
 function ProductDetailsSection({ items, visibleCount, hasSummary, summaryLoading }) {
   return (
-    <section aria-labelledby="payment-bag-heading" className="min-w-0">
-      <div className="flex items-center justify-between border-b border-gray-200 pb-4">
+    <section aria-labelledby="payment-bag-heading" className="min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-gray-100 px-4 py-2 sm:px-5">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#6aab8e]">
-            {hasSummary ? 'Backend summary' : 'Your selection'}
-          </p>
-          <h2 id="payment-bag-heading" className="mt-2 text-2xl font-bold text-gray-950">
-            Order Items
+          <h2 id="payment-bag-heading" className="text-lg font-bold text-gray-950">
+            Product Details
           </h2>
         </div>
-        <span className="rounded-full bg-[#f5f0ea] px-4 py-2 text-sm font-bold text-[#4f3128]">
+        <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm font-bold text-gray-950">
+          <PackageCheck className="h-4 w-4" />
           {visibleCount} {visibleCount === 1 ? 'item' : 'items'}
         </span>
       </div>
 
       {summaryLoading && !hasSummary ? (
-        <div className="mt-6 space-y-4">
-          {[1, 2].map((item) => (
-            <div key={item} className="h-36 animate-pulse rounded-3xl bg-gray-100" />
-          ))}
-        </div>
+        <LoaderBlock className="m-5 rounded-2xl border border-gray-100 bg-white py-12" />
       ) : items.length === 0 ? (
-        <div className="mt-6 border border-dashed border-gray-300 bg-white p-8 text-center">
-          <Gem className="mx-auto h-10 w-10 text-[#4f3128]" />
-          <p className="mt-4 text-sm font-bold text-gray-950">Backend checkout summary has not loaded yet.</p>
-          <Link href={APP_ROUTES.PRODUCTS} className="mt-3 inline-flex text-sm font-bold text-[#4f3128] underline underline-offset-4">
+        <div className="m-5 rounded-2xl border border-dashed border-gray-300 bg-white p-6 text-center">
+          <Gem className="mx-auto h-10 w-10 text-gray-950" />
+          <p className="mt-4 text-sm font-bold text-gray-950">No products found.</p>
+          <Link href={APP_ROUTES.PRODUCTS} className="mt-3 inline-flex text-sm font-bold text-gray-950 underline underline-offset-4">
             Continue shopping
           </Link>
         </div>
       ) : (
-        <ul className="mt-6 space-y-4">
+        <ul className="divide-y divide-gray-100">
           {items.map((item, index) => {
-            const isSummaryItem = 'product_name' in item;
-            const productTotal = item.total;
+            const quantity = getItemQuantity(item);
+            const productTotal = getItemTotal(item);
+            const unitPrice = getItemUnitPrice(item);
+            const originalPrice = getItemOriginalPrice(item);
             const productName = item.product_name ?? item.title ?? 'Product';
             const productSize = item.size_text ?? item.sizeLabel ?? item.size;
             const image = item.image;
             const slug = item.product_slug ?? item.slug;
+            const seller = item.seller_name ?? item.brand ?? 'Kyara Aura';
+            const visiblePrice = unitPrice ?? productTotal;
+            const discountPercent =
+              originalPrice && visiblePrice && originalPrice > visiblePrice
+                ? Math.round(((originalPrice - visiblePrice) / originalPrice) * 100)
+                : null;
 
             return (
-              <li key={`${item.product_size_id ?? item.productSizeId ?? item.id}-${index}`}>
-                <Link
-                  href={slug ? `${APP_ROUTES.PRODUCTS}/${slug}` : APP_ROUTES.PRODUCTS}
-                  className="group block overflow-hidden border border-gray-200 bg-white shadow-[0_16px_45px_rgba(17,24,39,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_22px_60px_rgba(17,24,39,0.1)]"
-                >
-                  <div className="flex flex-col sm:flex-row">
-                    <div className="relative min-h-44 bg-[#f7f1ea] sm:min-h-0 sm:w-44 sm:shrink-0">
-                      {image && !isSummaryItem ? (
-                        <Image src={image} alt={productName} fill className="object-cover" sizes="(max-width: 640px) 100vw, 176px" />
-                      ) : (
-                        <div className="flex h-full min-h-44 items-center justify-center text-[#4f3128]">
-                          <Gem className="h-10 w-10" />
-                        </div>
-                      )}
-                    </div>
+              <li key={`${item.product_size_id ?? item.productSizeId ?? item.id}-${index}`} className="p-4 sm:p-5">
+                <div className="grid gap-4 rounded-2xl bg-white sm:grid-cols-[96px_minmax(0,1fr)]">
+                  <Link
+                    href={slug ? `${APP_ROUTES.PRODUCTS}/${slug}` : APP_ROUTES.PRODUCTS}
+                    className="relative h-28 w-24 overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:bg-gray-50 sm:h-28 sm:w-24"
+                  >
+                    {image ? (
+                      <Image src={image} alt={productName} fill className="object-cover" sizes="96px" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-gray-950">
+                        <Gem className="h-8 w-8" />
+                      </div>
+                    )}
+                  </Link>
 
-                    <div className="flex min-w-0 flex-1 flex-col justify-between p-4 sm:p-5">
-                      <div>
-                        <h3 className="text-base font-bold leading-snug text-gray-950 sm:text-lg">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <Link
+                          href={slug ? `${APP_ROUTES.PRODUCTS}/${slug}` : APP_ROUTES.PRODUCTS}
+                          className="line-clamp-2 max-w-xl text-sm font-bold leading-5 text-gray-950 transition hover:text-gray-700 sm:text-base"
+                        >
                           {productName}
-                          {productSize ? ` (${productSize})` : ''}
-                        </h3>
-                        <p className="mt-2 text-sm font-semibold text-gray-600">
-                          Qty: {item.quantity}
+                        </Link>
+                        <p className="mt-1 text-xs font-semibold text-gray-500">
+                          {productSize ? `${productSize} · ` : ''}Seller: {seller}
                         </p>
                       </div>
+                    </div>
 
-                      <div className="mt-5 flex flex-wrap items-end justify-between gap-3">
-                        <span className="text-lg font-bold text-gray-950">
-                          {productTotal !== undefined && productTotal !== null ? formatInr(Number(productTotal)) : '-'}
-                        </span>
-                        {hasSummary ? (
-                          <span className="bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
-                            Server verified
-                          </span>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                      <button
+                        type="button"
+                        className="inline-flex h-9 items-center rounded-xl border border-gray-200 bg-white px-3 text-sm font-bold text-gray-950"
+                      >
+                        Qty: {quantity || item.quantity || 1}
+                      </button>
+
+                      <div className="flex flex-wrap items-baseline gap-2 text-right">
+                        {discountPercent ? <span className="text-sm font-extrabold text-gray-700">{discountPercent}% off</span> : null}
+                        {originalPrice && visiblePrice && originalPrice > visiblePrice ? (
+                          <span className="text-sm font-bold text-gray-400 line-through">{formatInr(originalPrice)}</span>
                         ) : null}
+                        <span className="text-xl font-bold text-gray-950">
+                          {visiblePrice !== null ? formatInr(visiblePrice) : '-'}
+                        </span>
                       </div>
                     </div>
+
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-gray-500">
+                      {productTotal !== null ? <span>Item total: {formatInr(productTotal)}</span> : null}
+                    </div>
                   </div>
-                </Link>
+                </div>
               </li>
             );
           })}
@@ -677,7 +753,8 @@ function AddressSection({
   savingAddress,
   addressActionId,
   onSelectAddress,
-  onToggleForm,
+  onOpenNewAddress,
+  onCloseDrawer,
   onAddressFieldChange,
   onAddressSubmit,
   onEditAddress,
@@ -685,117 +762,270 @@ function AddressSection({
   onSetDefaultAddress,
 }) {
   return (
-    <section className="border-b border-gray-200 pb-5">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-xl font-bold text-gray-950">Delivery Address</h1>
-        <button type="button" onClick={onToggleForm} className="inline-flex items-center gap-2 text-sm font-bold text-[#4f63d9]">
-          <Plus className="h-4 w-4" />
-          {showAddressForm ? 'Close' : 'Add'}
+    <section className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-4 py-2 sm:px-5">
+        <div>
+          <h2 className="text-lg font-bold text-gray-950">Address</h2>
+        </div>
+        <button
+          type="button"
+          onClick={onOpenNewAddress}
+          className="inline-flex h-9 items-center gap-2 rounded-full border border-gray-200 bg-white px-4 text-sm font-bold text-gray-950 transition hover:border-gray-950"
+        >
+          {selectedAddress ? 'Change' : 'Add Address'}
         </button>
       </div>
 
-      {addresses.length > 0 ? (
-        <div className="mt-4 space-y-3">
-          {addresses.map((address) => {
-            const isSelected = String(address.id) === String(selectedAddressId);
-
-            return (
-              <div
-                key={address.id}
-                className={`w-full border p-4 text-left transition ${
-                  isSelected ? 'border-[#4f3128] bg-[#f8f4ef]' : 'border-gray-200 bg-white hover:border-gray-400'
-                }`}
-              >
-                <span className="flex items-start gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onSelectAddress(String(address.id))}
-                    className={`mt-1 h-4 w-4 shrink-0 rounded-full border ${isSelected ? 'border-[#4f3128] bg-[#4f3128]' : 'border-gray-400'}`}
-                    aria-label={`Select ${address.name} address`}
-                  />
-                  <span className="min-w-0 flex-1">
-                    <button type="button" onClick={() => onSelectAddress(String(address.id))} className="block text-left font-bold text-gray-950">
-                      {address.name} {address.address_type ? `(${address.address_type})` : ''}
-                    </button>
-                    {address.is_default ? (
-                      <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-xs font-bold text-green-700">
-                        <Star className="h-3 w-3 fill-current" />
-                        Default
-                      </span>
-                    ) : null}
-                    <span className="mt-1 block text-sm leading-5 text-gray-700">
-                      {[address.address_line_1, address.address_line_2, address.city, address.state, address.postal_code, address.country]
-                        .filter(Boolean)
-                        .join(', ')}
-                    </span>
-                    <span className="mt-2 block text-sm font-semibold text-gray-950">Mobile: {address.phone}</span>
-                    <span className="mt-3 flex flex-wrap gap-2">
-                      {!address.is_default ? (
-                        <button
-                          type="button"
-                          onClick={() => onSetDefaultAddress(address.id)}
-                          disabled={addressActionId === address.id}
-                          className="rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 transition hover:border-[#4f3128] hover:text-[#4f3128] disabled:opacity-50"
-                        >
-                          Set default
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => onEditAddress(address)}
-                        disabled={addressActionId === address.id}
-                        className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 transition hover:border-[#4f3128] hover:text-[#4f3128] disabled:opacity-50"
-                      >
-                        <Edit3 className="h-3 w-3" />
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDeleteAddress(address.id)}
-                        disabled={addressActionId === address.id}
-                        className="inline-flex items-center gap-1 rounded-full border border-red-100 px-3 py-1 text-xs font-bold text-red-700 transition hover:border-red-300 disabled:opacity-50"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </button>
-                    </span>
-                  </span>
+      {selectedAddress ? (
+        <div className="2 py-2 sm:px-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-extrabold text-gray-950">{selectedAddress.name}</p>
+              {selectedAddress.address_type ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-gray-700">
+                  <Home className="h-3 w-3" />
+                  {selectedAddress.address_type}
                 </span>
-              </div>
-            );
-          })}
+              ) : null}
+              {selectedAddress.is_default ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-bold text-gray-700">
+                  <Star className="h-3 w-3 fill-current" />
+                  Default
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-3 max-w-4xl text-sm leading-6 text-gray-700">{getAddressText(selectedAddress)}</p>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-gray-700">
+              {selectedAddress.phone ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5">
+                  <Phone className="h-3.5 w-3.5 text-gray-500" />
+                  {selectedAddress.phone}
+                </span>
+              ) : null}
+              {selectedAddress.email ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5">
+                  <Mail className="h-3.5 w-3.5 text-gray-500" />
+                  {selectedAddress.email}
+                </span>
+              ) : null}
+            </div>
+          </div>
         </div>
       ) : (
-        <p className="mt-4 border border-dashed border-gray-300 p-4 text-sm text-gray-600">
-          Add a delivery address to generate your checkout summary.
-        </p>
+        <div className="px-4 py-4 sm:px-5">
+          <button
+            type="button"
+            onClick={onOpenNewAddress}
+            className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-left transition hover:border-gray-950"
+          >
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-950">
+              <MapPin className="h-5 w-5" />
+            </span>
+            <span>
+              <span className="block text-sm font-extrabold text-gray-950">No delivery address yet.</span>
+            </span>
+          </button>
+        </div>
       )}
 
-      {selectedAddress ? (
-        <div className="mt-4 bg-[#f2eee8] px-4 py-2 text-center text-sm font-bold text-gray-900">
-          Free Delivery within 3-6 days
-        </div>
-      ) : null}
-
-      {showAddressForm ? (
-        <AddressForm
-          addressForm={addressForm}
-          editingAddressId={editingAddressId}
-          savingAddress={savingAddress}
-          onAddressFieldChange={onAddressFieldChange}
-          onAddressSubmit={onAddressSubmit}
-        />
-      ) : null}
+      <AddressDrawer
+        open={showAddressForm}
+        addresses={addresses}
+        selectedAddressId={selectedAddressId}
+        addressForm={addressForm}
+        editingAddressId={editingAddressId}
+        savingAddress={savingAddress}
+        addressActionId={addressActionId}
+        onOpenChange={(open) => {
+          if (!open) onCloseDrawer();
+        }}
+        onSelectAddress={onSelectAddress}
+        onOpenNewAddress={onOpenNewAddress}
+        onAddressFieldChange={onAddressFieldChange}
+        onAddressSubmit={onAddressSubmit}
+        onEditAddress={onEditAddress}
+        onDeleteAddress={onDeleteAddress}
+        onSetDefaultAddress={onSetDefaultAddress}
+      />
     </section>
+  );
+}
+
+function AddressDrawer({
+  open,
+  addresses,
+  selectedAddressId,
+  addressForm,
+  editingAddressId,
+  savingAddress,
+  addressActionId,
+  onOpenChange,
+  onSelectAddress,
+  onOpenNewAddress,
+  onAddressFieldChange,
+  onAddressSubmit,
+  onEditAddress,
+  onDeleteAddress,
+  onSetDefaultAddress,
+}) {
+  return (
+    <Drawer.Root open={open} onOpenChange={onOpenChange} swipeDirection="right">
+      <Drawer.Portal>
+        <Drawer.Backdrop className="fixed inset-0 z-[60] bg-gray-950/45 backdrop-blur-sm transition-opacity duration-300 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0" />
+        <Drawer.Viewport>
+          <Drawer.Popup className="fixed inset-y-0 right-0 z-[61] flex w-full max-w-[min(100vw,35rem)] flex-col bg-white shadow-[-28px_0_80px_rgba(17,24,39,0.18)] outline-none transition-transform duration-300 data-[ending-style]:translate-x-full data-[starting-style]:translate-x-full lg:w-[35vw]">
+            <div className="flex items-start justify-between gap-4 border-b border-gray-100 px-5 py-5">
+              <div>
+                <Drawer.Title className="text-xl font-extrabold text-gray-950">
+                  {editingAddressId ? 'Edit Address' : 'Address Details'}
+                </Drawer.Title>
+              </div>
+              <Drawer.Close className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 transition hover:bg-gray-200" aria-label="Close address drawer">
+                <X className="h-5 w-5" />
+              </Drawer.Close>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-5" data-lenis-prevent>
+              {addresses.length > 0 ? (
+                <div className="mb-5">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-extrabold text-gray-950">Saved addresses</h3>
+                    <button type="button" onClick={onOpenNewAddress} className="inline-flex items-center gap-1 text-xs font-extrabold text-gray-950">
+                      <Plus className="h-3.5 w-3.5" />
+                      New address
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {addresses.map((address) => (
+                      <SavedAddressCard
+                        key={address.id}
+                        address={address}
+                        isSelected={String(address.id) === String(selectedAddressId)}
+                        addressActionId={addressActionId}
+                        onSelectAddress={onSelectAddress}
+                        onEditAddress={onEditAddress}
+                        onDeleteAddress={onDeleteAddress}
+                        onSetDefaultAddress={onSetDefaultAddress}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <AddressForm
+                addressForm={addressForm}
+                editingAddressId={editingAddressId}
+                savingAddress={savingAddress}
+                onAddressFieldChange={onAddressFieldChange}
+                onAddressSubmit={onAddressSubmit}
+              />
+            </div>
+          </Drawer.Popup>
+        </Drawer.Viewport>
+      </Drawer.Portal>
+    </Drawer.Root>
+  );
+}
+
+function SavedAddressCard({
+  address,
+  isSelected,
+  addressActionId,
+  onSelectAddress,
+  onEditAddress,
+  onDeleteAddress,
+  onSetDefaultAddress,
+}) {
+  return (
+    <div className={`rounded-2xl border bg-white p-3 transition ${isSelected ? 'border-gray-950' : 'border-gray-200'}`}>
+      <div className="flex items-start gap-3">
+        <button
+          type="button"
+          onClick={() => onSelectAddress(String(address.id))}
+          className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${isSelected ? 'border-gray-950 bg-gray-950' : 'border-gray-300 bg-white'}`}
+          aria-label={`Select ${address.name} address`}
+        >
+          {isSelected ? <span className="h-2 w-2 rounded-full bg-white" /> : null}
+        </button>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="button" onClick={() => onSelectAddress(String(address.id))} className="text-left text-sm font-extrabold text-gray-950">
+              {address.name}
+            </button>
+            {address.address_type ? (
+              <span className="rounded-full border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-700">
+                {address.address_type}
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-2 text-xs leading-5 text-gray-600">{getAddressText(address)}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {!address.is_default ? (
+              <button
+                type="button"
+                onClick={() => onSetDefaultAddress(address.id)}
+                disabled={addressActionId === address.id}
+                className="rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 transition hover:border-gray-950 hover:text-gray-950 disabled:opacity-50"
+              >
+                {addressActionId === address.id ? <LoadingLabel>Setting...</LoadingLabel> : 'Set default'}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => onEditAddress(address)}
+              disabled={addressActionId === address.id}
+              className="inline-flex items-center gap-1 rounded-full border border-gray-200 px-3 py-1 text-xs font-bold text-gray-700 transition hover:border-gray-950 hover:text-gray-950 disabled:opacity-50"
+            >
+              <Edit3 className="h-3 w-3" />
+              Edit
+            </button>
+            <button
+              type="button"
+              onClick={() => onDeleteAddress(address.id)}
+              disabled={addressActionId === address.id}
+              className="inline-flex items-center gap-1 rounded-full border border-red-100 px-3 py-1 text-xs font-bold text-red-700 transition hover:border-red-300 disabled:opacity-50"
+            >
+              <Trash2 className="h-3 w-3" />
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function AddressForm({ addressForm, editingAddressId, savingAddress, onAddressFieldChange, onAddressSubmit }) {
   return (
-    <form onSubmit={onAddressSubmit} className="mt-5 grid gap-3 border border-gray-200 bg-white p-4 sm:grid-cols-2">
-      <AddressInput label="Name" value={addressForm.name} onChange={(value) => onAddressFieldChange('name', value)} required />
+    <form onSubmit={onAddressSubmit} className="grid gap-3 rounded-2xl border border-gray-200 bg-white p-4 sm:grid-cols-2">
+      <AddressInput
+        label="Name"
+        value={addressForm.name}
+        onChange={(value) => onAddressFieldChange('name', value)}
+        required
+        className="sm:col-span-2"
+      />
       <AddressInput label="Email" type="email" value={addressForm.email} onChange={(value) => onAddressFieldChange('email', value)} required />
       <AddressInput label="Phone" value={addressForm.phone} onChange={(value) => onAddressFieldChange('phone', value)} required />
+      <label>
+        <span className="text-xs font-bold uppercase tracking-wide text-gray-500">Address line 1</span>
+        <textarea
+          value={addressForm.address_line_1}
+          onChange={(event) => onAddressFieldChange('address_line_1', event.target.value)}
+          required
+          rows={2}
+          className="mt-1 w-full resize-none rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-950"
+        />
+      </label>
+      <label>
+        <span className="text-xs font-bold uppercase tracking-wide text-gray-500">Address line 2</span>
+        <textarea
+          value={addressForm.address_line_2}
+          onChange={(event) => onAddressFieldChange('address_line_2', event.target.value)}
+          rows={2}
+          className="mt-1 w-full resize-none rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm outline-none transition focus:border-gray-950"
+        />
+      </label>
       <AddressInput label="City" value={addressForm.city} onChange={(value) => onAddressFieldChange('city', value)} required />
       <AddressInput label="State" value={addressForm.state} onChange={(value) => onAddressFieldChange('state', value)} required />
       <AddressInput label="Postal code" value={addressForm.postal_code} onChange={(value) => onAddressFieldChange('postal_code', value)} required />
@@ -806,31 +1036,12 @@ function AddressForm({ addressForm, editingAddressId, savingAddress, onAddressFi
         <select
           value={addressForm.address_type}
           onChange={(event) => onAddressFieldChange('address_type', event.target.value)}
-          className="mt-1 h-11 w-full border border-gray-200 px-3 text-sm outline-none transition focus:border-gray-950"
+          className="mt-1 h-11 w-full rounded-2xl border border-gray-200 bg-white px-3 text-sm outline-none transition focus:border-gray-950"
         >
           <option value="home">Home</option>
           <option value="work">Work</option>
           <option value="other">Other</option>
         </select>
-      </label>
-      <label className="sm:col-span-2">
-        <span className="text-xs font-bold uppercase tracking-wide text-gray-500">Address line 1</span>
-        <textarea
-          value={addressForm.address_line_1}
-          onChange={(event) => onAddressFieldChange('address_line_1', event.target.value)}
-          required
-          rows={2}
-          className="mt-1 w-full resize-none border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-gray-950"
-        />
-      </label>
-      <label className="sm:col-span-2">
-        <span className="text-xs font-bold uppercase tracking-wide text-gray-500">Address line 2</span>
-        <textarea
-          value={addressForm.address_line_2}
-          onChange={(event) => onAddressFieldChange('address_line_2', event.target.value)}
-          rows={2}
-          className="mt-1 w-full resize-none border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-gray-950"
-        />
       </label>
       <label className="flex items-center gap-2 text-sm font-semibold text-gray-700">
         <input
@@ -843,24 +1054,32 @@ function AddressForm({ addressForm, editingAddressId, savingAddress, onAddressFi
       <button
         type="submit"
         disabled={savingAddress}
-        className="h-11 bg-[#4f3128] px-5 text-sm font-bold text-white transition hover:bg-[#3d261f] disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
+        className="h-12 rounded-full bg-gray-950 px-5 text-sm font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-2"
       >
-        {savingAddress ? 'Saving address...' : editingAddressId ? 'Update Address' : 'Save Address'}
+        {savingAddress ? (
+          <LoadingLabel spinnerClassName="border-white border-t-transparent">
+            Saving address...
+          </LoadingLabel>
+        ) : editingAddressId ? (
+          'Update Address'
+        ) : (
+          'Save Address'
+        )}
       </button>
     </form>
   );
 }
 
-function AddressInput({ label, value, onChange, type = 'text', required = false }) {
+function AddressInput({ label, value, onChange, type = 'text', required = false, className = '' }) {
   return (
-    <label>
+    <label className={className}>
       <span className="text-xs font-bold uppercase tracking-wide text-gray-500">{label}</span>
       <input
         type={type}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required={required}
-        className="mt-1 h-11 w-full border border-gray-200 px-3 text-sm outline-none transition focus:border-gray-950"
+        className="mt-1 h-11 w-full rounded-2xl border border-gray-200 bg-white px-3 text-sm outline-none transition focus:border-gray-950"
       />
     </label>
   );
@@ -868,34 +1087,43 @@ function AddressInput({ label, value, onChange, type = 'text', required = false 
 
 function PaymentMethodSection({ selectedMethod, onSelectMethod }) {
   return (
-    <section className="border-b border-gray-200 pb-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-bold text-gray-950">Payment Method</h2>
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#4f63d9]">
-          <ShieldCheck className="h-4 w-4" />
-          100% safe payments
+    <section className="rounded-xl border border-gray-200 bg-white p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-950">
+            <CreditCard className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-lg font-bold text-gray-950">Payment Method</h2>
+          </div>
         </div>
       </div>
 
-      <div className="mt-5 divide-y divide-gray-200">
-        {PAYMENT_OPTIONS.map(({ id, title, description, badge, Icon }) => {
+      <div className="mt-4 grid gap-2">
+        {PAYMENT_OPTIONS.map(({ id, title, description, Icon }) => {
           const isSelected = selectedMethod === id;
 
           return (
-            <button key={id} type="button" onClick={() => onSelectMethod(id)} className="flex w-full items-start gap-3 py-5 text-left sm:gap-4">
-              <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${isSelected ? 'border-[#4f3128]' : 'border-gray-400'}`}>
-                {isSelected ? <span className="h-2.5 w-2.5 rounded-full bg-[#4f3128]" /> : null}
+            <button
+              key={id}
+              type="button"
+              onClick={() => onSelectMethod(id)}
+              className={`flex w-full items-start gap-3 rounded-xl border bg-white p-3 text-left transition sm:gap-3 ${
+                isSelected ? 'border-gray-950' : 'border-gray-200 hover:border-gray-400'
+              }`}
+            >
+              <span className={`mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${isSelected ? 'border-gray-950 bg-gray-950' : 'border-gray-300 bg-white'}`}>
+                {isSelected ? <span className="h-2 w-2 rounded-full bg-white" /> : null}
               </span>
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f5f0ea] text-[#4f3128]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-950">
                 <Icon className="h-5 w-5" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-2">
                   <span className="font-bold text-gray-950">{title}</span>
                 </span>
-                <span className="mt-1 block text-sm leading-5 text-gray-500">{description}</span>
+                <span className="mt-1 block text-xs leading-5 text-gray-500">{description}</span>
               </span>
-              <span className="hidden shrink-0 text-sm font-bold text-[#4f63d9] sm:block">{badge}</span>
             </button>
           );
         })}
@@ -911,70 +1139,76 @@ function BillDetails({ summary, visibleCount, summaryLoading }) {
   const totalAmount = getSummaryTotal(summary);
 
   return (
-    <section className="pb-2">
+    <section className="rounded-xl border border-gray-200 bg-white p-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-xl font-bold text-gray-950">Bill Details</h2>
-        {summaryLoading ? <span className="text-xs font-bold text-gray-500">Refreshing...</span> : null}
+        <span className="flex items-center gap-2">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-950">
+            <ReceiptText className="h-5 w-5" />
+          </span>
+          <h2 className="text-lg font-bold text-gray-950">Price Details</h2>
+        </span>
+        {summaryLoading ? (
+          <LoadingLabel className="text-xs font-bold text-gray-500">
+            Refreshing...
+          </LoadingLabel>
+        ) : null}
       </div>
       {summaryLoading && !summary ? (
-        <div className="mt-4 space-y-3">
-          {[1, 2, 3, 4, 5].map((item) => (
-            <div key={item} className="h-5 animate-pulse rounded-full bg-gray-100" />
-          ))}
-        </div>
+        <LoaderBlock className="mt-4 rounded-2xl border border-gray-100 py-8" />
       ) : !summary ? (
-        <p className="mt-4 rounded border border-dashed border-gray-300 p-4 text-sm font-semibold text-gray-600">
+        <p className="mt-4 rounded-2xl border border-dashed border-gray-300 bg-white p-4 text-sm font-semibold text-gray-600">
           Select a delivery address to load backend-calculated subtotal, tax, shipping, and total.
         </p>
       ) : (
-      <dl className="mt-4 space-y-3 text-sm">
-        <div className="flex items-center justify-between">
-          <dt className="font-semibold text-gray-700">Items</dt>
-          <dd className="font-bold text-gray-950">{visibleCount}</dd>
-        </div>
-        <div className="flex items-center justify-between">
-          <dt className="font-semibold text-gray-700">Subtotal</dt>
-          <dd className="font-bold text-gray-950">{formatInr(subtotal)}</dd>
-        </div>
-        <div className="flex items-center justify-between">
-          <dt className="font-semibold text-gray-700">Tax</dt>
-          <dd className="font-bold text-gray-950">{formatInr(taxAmount)}</dd>
-        </div>
-        <div className="flex items-center justify-between">
-          <dt className="font-semibold text-gray-700">Delivery fee</dt>
-          <dd className="font-bold text-gray-950">{formatInr(shippingAmount)}</dd>
-        </div>
-        <div className="flex items-center justify-between border-t border-gray-200 pt-3">
-          <dt className="font-bold text-gray-950">Total amount</dt>
-          <dd className="font-bold text-gray-950">{formatInr(totalAmount)}</dd>
-        </div>
-      </dl>
+        <dl className="mt-4 space-y-2 text-sm">
+          <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+            <dt className="font-semibold text-gray-700">Items</dt>
+            <dd className="font-bold text-gray-950">{visibleCount}</dd>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+            <dt className="font-semibold text-gray-700">Subtotal</dt>
+            <dd className="font-bold text-gray-950">{formatInr(subtotal)}</dd>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+            <dt className="font-semibold text-gray-700">Tax</dt>
+            <dd className="font-bold text-gray-950">{formatInr(taxAmount)}</dd>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3">
+            <dt className="font-semibold text-gray-700">Delivery fee</dt>
+            <dd className="font-bold text-gray-950">{formatInr(shippingAmount)}</dd>
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-gray-950 bg-white px-4 py-4 text-gray-950">
+            <dt className="font-bold">Total amount</dt>
+            <dd className="font-extrabold">{formatInr(totalAmount)}</dd>
+          </div>
+        </dl>
       )}
-
-      {summary ? (
-        <div className="mt-4 flex items-center justify-center gap-3 bg-[#eef1ff] px-4 py-4 text-center font-bold text-[#4f63d9]">
-          <CircleCheck className="h-5 w-5 shrink-0" />
-          <span>Total verified by backend before payment</span>
-        </div>
-      ) : null}
     </section>
   );
 }
 
 function CheckoutAction({ total, selectedMethod, disabled, loading, onClick, className = 'flex' }) {
   return (
-    <div className={`items-center justify-between gap-4 border-t border-gray-200 pt-5 ${className}`}>
+    <div className={`items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4 ${className}`}>
       <div>
-        <p className="text-sm font-bold text-gray-950">Total amount</p>
-        <p className="text-xl font-bold text-gray-950">{formatInr(total)}</p>
+        <p className="text-sm font-bold text-gray-500">Total amount</p>
+        <p className="text-xl font-extrabold text-gray-950">{formatInr(total)}</p>
       </div>
       <button
         type="button"
         disabled={disabled}
         onClick={onClick}
-        className="h-12 bg-[#4f3128] px-7 text-sm font-bold text-white transition hover:bg-[#3d261f] disabled:cursor-not-allowed disabled:opacity-50"
+        className="h-12 rounded-full bg-gray-950 px-7 text-sm font-extrabold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {loading ? 'Please wait...' : selectedMethod === 'online' ? 'Pay Now' : 'Place Order'}
+        {loading ? (
+          <LoadingLabel spinnerClassName="border-white border-t-transparent">
+            Please wait...
+          </LoadingLabel>
+        ) : selectedMethod === 'online' ? (
+          'Pay Now'
+        ) : (
+          'Place Order'
+        )}
       </button>
     </div>
   );
@@ -984,9 +1218,9 @@ function Toast({ message, type }) {
   const isError = type === 'error';
 
   return (
-    <div className="fixed right-4 top-20 z-[70] max-w-sm rounded-2xl border border-gray-100 bg-white p-4 text-sm font-semibold text-gray-900 shadow-[0_18px_50px_rgba(17,24,39,0.18)]">
+    <div className="fixed right-4 top-20 z-[70] max-w-sm rounded-xl border border-gray-200 bg-white p-4 text-sm font-semibold text-gray-900">
       <span className="flex items-start gap-3">
-        {isError ? <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" /> : <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-green-700" />}
+        {isError ? <XCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" /> : <CircleCheck className="mt-0.5 h-5 w-5 shrink-0 text-gray-950" />}
         <span>{message}</span>
       </span>
     </div>

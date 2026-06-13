@@ -4,10 +4,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Menu, X, Search, User, ShoppingBag, Heart } from 'lucide-react';
 import { useLogout } from '@/hooks/auth';
 import { useProductNameSearch } from '@/hooks/use-products';
 import { useWishlist } from '@/hooks/use-wishlist';
+import { Loader, LoadingLabel } from '@/components/ui/loader';
 import { useCartStore } from '@/lib/cart/store';
 import { APP_ROUTES, AUTH_PAGE_ROUTES } from '@/lib/routes';
 import { useAuthStore } from '@/store/auth-store';
@@ -56,6 +58,16 @@ export default function Header({ variant = 'default' }) {
   const count = useCartStore((state) => state.itemCount || state.items.reduce((total, item) => total + item.quantity, 0));
   const setCart = useCartStore((state) => state.setCart);
   const showAuthenticatedActions = isHydrated && isAuthenticated;
+  const cartQuery = useQuery({
+    queryKey: ['cart'],
+    queryFn: async () => {
+      const cart = await getCartApi();
+      setCart(cart);
+      return cart;
+    },
+    enabled: showAuthenticatedActions,
+    staleTime: 30_000,
+  });
   const wishlistQuery = useWishlist({ enabled: showAuthenticatedActions });
   const wishCount = wishlistQuery.data?.length ?? 0;
   const actionCounts = {
@@ -81,21 +93,6 @@ export default function Header({ variant = 'default' }) {
   const iconClassName = isHomeOverlay
     ? 'inline-flex items-center justify-center rounded-full p-2 text-gray-950 opacity-100 drop-shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/55 hover:text-gray-950 focus:outline-none focus:ring-2 focus:ring-gold/30 dark:text-gray-950 dark:hover:bg-white/55 dark:hover:text-gray-950'
     : 'inline-flex items-center justify-center rounded-full p-2 text-gray-950 opacity-100 drop-shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/55 hover:text-gold focus:outline-none focus:ring-2 focus:ring-gold/30 dark:text-gray-950 dark:hover:bg-white/55 dark:hover:text-gold';
-
-  useEffect(() => {
-    if (!showAuthenticatedActions) return;
-
-    let isCurrent = true;
-    getCartApi()
-      .then((cart) => {
-        if (isCurrent) setCart(cart);
-      })
-      .catch(() => {});
-
-    return () => {
-      isCurrent = false;
-    };
-  }, [setCart, showAuthenticatedActions]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -188,9 +185,7 @@ export default function Header({ variant = 'default' }) {
   const renderSearchPanel = (containerRef, inputRef, isMobileSearch = false) => {
     const trimmedTerm = searchTerm.trim();
     const showSearchContent = searchOpen && trimmedTerm.length >= 2;
-    const searchStatus = searchProductsQuery.isLoading
-      ? 'Searching...'
-      : searchProductsQuery.isError
+    const searchStatus = searchProductsQuery.isError
         ? 'Unable to search right now.'
         : 'No products found.';
 
@@ -236,7 +231,7 @@ export default function Header({ variant = 'default' }) {
         {showSearchContent && (
           <div className="header-menu-glass absolute right-0 top-1 max-h-[70vh] w-full overflow-hidden rounded-3xl border border-white/55 p-2 shadow-xl">
             {searchProductsQuery.isSuccess && searchResults.length > 0 ? (
-              <div className="max-h-72 overflow-y-auto">
+              <div className="max-h-72 overflow-y-auto" data-lenis-prevent>
                 {searchResults.map((product) => (
                   <Link
                     key={product._id ?? product.id ?? product.slug}
@@ -249,7 +244,15 @@ export default function Header({ variant = 'default' }) {
                 ))}
               </div>
             ) : (
-              <p className="px-3 py-4 text-center text-sm text-gray-600">{searchStatus}</p>
+              <div className="px-3 py-4 text-center text-sm text-gray-600">
+                {searchProductsQuery.isLoading ? (
+                  <LoadingLabel>
+                    Searching...
+                  </LoadingLabel>
+                ) : (
+                  searchStatus
+                )}
+              </div>
             )}
           </div>
         )}
@@ -266,7 +269,13 @@ export default function Header({ variant = 'default' }) {
           onClick={handleLogout}
           disabled={logoutMutation.isPending}
         >
-          {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
+          {logoutMutation.isPending ? (
+            <LoadingLabel>
+              Logging out...
+            </LoadingLabel>
+          ) : (
+            'Logout'
+          )}
         </button>
       );
     }
@@ -365,6 +374,10 @@ export default function Header({ variant = 'default' }) {
           {HEADER_ICON_ITEMS.map(({ key, label, href, Icon, type, countKey }) => {
 
             const itemCount = countKey ? actionCounts[countKey] : 0;
+            const countLoading =
+              showAuthenticatedActions &&
+              ((countKey === 'cartCount' && cartQuery.isLoading) ||
+                (countKey === 'wishCount' && wishlistQuery.isLoading));
 
             if (type === 'button') {
               return (
@@ -391,11 +404,15 @@ export default function Header({ variant = 'default' }) {
                 aria-label={itemCount > 0 ? `${label}, ${itemCount} items` : label}
               >
                 <Icon className="h-5 w-5" />
-                {itemCount > 0 && (
+                {countLoading ? (
+                  <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full !bg-[#2C2C2E] shadow-lg shadow-gold/30">
+                    <Loader size="sm" className="h-2.5 w-2.5 border border-white border-t-transparent" />
+                  </span>
+                ) : itemCount > 0 ? (
                   <span className="absolute right-0 top-0 flex h-4 w-4 items-center  justify-center rounded-full !bg-[#2C2C2E] text-[10px] font-semibold text-white shadow-lg shadow-gold/30">
                     {itemCount > 99 ? '99+' : itemCount}
                   </span>
-                )}
+                ) : null}
               </Link>
             );
           })}
@@ -455,11 +472,15 @@ export default function Header({ variant = 'default' }) {
             aria-label={count > 0 ? `Cart, ${count} items` : 'Cart'}
           >
             <ShoppingBag className="h-5 w-5" />
-            {count > 0 && (
+            {showAuthenticatedActions && cartQuery.isLoading ? (
+              <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-gold shadow-lg shadow-gold/30">
+                <Loader size="sm" className="h-2.5 w-2.5 border border-white border-t-transparent" />
+              </span>
+            ) : count > 0 ? (
               <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-gold text-[10px] font-semibold text-white shadow-lg shadow-gold/30">
                 {count > 99 ? '99+' : count}
               </span>
-            )}
+            ) : null}
           </Link>
 
           {/* Mobile Menu Toggle */}

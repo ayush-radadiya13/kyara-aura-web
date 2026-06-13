@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Heart } from 'lucide-react';
+import { Loader } from '@/components/ui/loader';
 import { useAddWishlistItem, useDeleteWishlistItem } from '@/hooks/use-wishlist';
 import { AUTH_PAGE_ROUTES, withRedirect } from '@/lib/routes';
 import { useAuthStore } from '@/store/auth-store';
@@ -90,12 +91,16 @@ export default function WishlistButton({
         ${className}
       `}
     >
-      <Heart
-        className={`h-5 w-5 transition-transform duration-200 ${animating ? 'scale-110' : ''}`}
-        fill={active ? 'currentColor' : 'none'}
-        strokeWidth={1.8}
-        aria-hidden
-      />
+      {busy ? (
+        <Loader size="sm" className="h-4 w-4 border-current border-t-transparent" />
+      ) : (
+        <Heart
+          className={`h-5 w-5 transition-transform duration-200 ${animating ? 'scale-110' : ''}`}
+          fill={active ? 'currentColor' : 'none'}
+          strokeWidth={1.8}
+          aria-hidden
+        />
+      )}
     </button>
   );
 }

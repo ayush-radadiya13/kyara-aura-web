@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { Loader, LoaderBlock, LoadingLabel } from '@/components/ui/loader';
 import { useCartStore } from '@/lib/cart/store';
 import { formatInr } from '@/lib/cart/format';
 import { clearCartApi, getCartApi, removeCartItemApi, updateCartQuantityApi } from '@/services/cart';
@@ -173,7 +174,13 @@ export default function CartBag() {
             disabled={isClearing || selectedItemIds.length === 0}
             className="rounded-full bg-gray-950 px-6 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300"
           >
-            {isClearing ? 'Deleting...' : 'Delete'}
+            {isClearing ? (
+              <LoadingLabel spinnerClassName="border-white border-t-transparent">
+                Deleting...
+              </LoadingLabel>
+            ) : (
+              'Delete'
+            )}
           </button>
         </div>
       )}
@@ -186,7 +193,7 @@ export default function CartBag() {
 
       {isLoading && items.length === 0 ? (
         <div className="mt-5 rounded-[1.5rem] border border-gray-200 bg-white py-12 text-center">
-          <p className="text-sm text-gray-600">Loading your bag...</p>
+          <LoaderBlock className="py-0" />
         </div>
       ) : items.length === 0 ? (
         <div className="mt-5 rounded-[1.5rem] border border-gray-200 bg-white py-12 text-center shadow-[0_14px_40px_rgba(17,24,39,0.06)]">
@@ -225,7 +232,6 @@ export default function CartBag() {
                     src={imageSrc}
                     alt={item.title}
                     fill
-                    unoptimized={imageSrc.startsWith('http')}
                     className="object-contain p-2"
                     sizes="(max-width: 640px) 72px, 92px"
                   />
@@ -251,7 +257,11 @@ export default function CartBag() {
                       onClick={() => handleRemove(item)}
                       disabled={disabled}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {disabled ? (
+                        <Loader size="sm" className="h-4 w-4 border-current border-t-transparent" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
 
@@ -266,7 +276,11 @@ export default function CartBag() {
                     onClick={() => handleRemove(item)}
                     disabled={disabled}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {disabled ? (
+                      <Loader size="sm" className="h-4 w-4 border-current border-t-transparent" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
                   </button>
 
                   <div className="inline-flex h-9 items-center rounded-full bg-gray-50 px-3 text-gray-950">
@@ -279,7 +293,13 @@ export default function CartBag() {
                     >
                       -
                     </button>
-                    <span className="min-w-8 text-center text-sm font-bold">{item.quantity}</span>
+                    <span className="flex min-w-8 justify-center text-center text-sm font-bold">
+                      {disabled ? (
+                        <Loader size="sm" className="h-4 w-4 border-gray-950 border-t-transparent" />
+                      ) : (
+                        item.quantity
+                      )}
+                    </span>
                     <button
                       type="button"
                       className="px-2 text-lg font-bold disabled:cursor-not-allowed disabled:opacity-40"

@@ -18,7 +18,6 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-image: linear-gradient(180deg, #ffffff 0%, #f8f8f8 30%, #ffffff 70%, #ffffff 100%);
-  background-attachment: fixed;
 }
 
 .glass {
@@ -31,12 +30,12 @@ body {
 .header-glass {
   position: relative;
   isolation: isolate;
-  -webkit-backdrop-filter: saturate(190%) blur(30px);
-  backdrop-filter: saturate(190%) blur(30px);
-  background: linear-gradient(135deg, rgb(255 255 255 / 0.92), rgb(255 255 255 / 0.72) 48%, rgb(255 255 255 / 0.86));
+  -webkit-backdrop-filter: saturate(150%) blur(14px);
+  backdrop-filter: saturate(150%) blur(14px);
+  background: linear-gradient(135deg, rgb(255 255 255 / 0.94), rgb(255 255 255 / 0.84) 48%, rgb(255 255 255 / 0.9));
   border: 1px solid rgb(255 255 255 / 0.72);
   box-shadow:
-    0 18px 44px rgb(15 23 42 / 0.14),
+    0 12px 28px rgb(15 23 42 / 0.1),
     0 1px 0 rgb(255 255 255 / 0.74),
     inset 0 1px 0 rgb(255 255 255 / 0.9),
     inset 0 -1px 0 rgb(255 255 255 / 0.32);
@@ -72,14 +71,14 @@ body {
 .header-menu-glass {
   position: relative;
   isolation: isolate;
-  -webkit-backdrop-filter: saturate(170%) blur(24px);
-  backdrop-filter: saturate(170%) blur(24px);
+  -webkit-backdrop-filter: saturate(145%) blur(12px);
+  backdrop-filter: saturate(145%) blur(12px);
   background:
     radial-gradient(circle at 20% 0%, rgb(255 255 255 / 0.9), transparent 74%),
-    linear-gradient(135deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.68));
+    linear-gradient(135deg, rgb(255 255 255 / 0.94), rgb(255 255 255 / 0.82));
   border: 1px solid rgb(255 255 255 / 0.68);
   box-shadow:
-    0 16px 38px rgb(15 23 42 / 0.12),
+    0 12px 28px rgb(15 23 42 / 0.1),
     inset 0 1px 0 rgb(255 255 255 / 0.82);
 }
 
@@ -89,7 +88,6 @@ body {
   transition:
     opacity 180ms ease,
     transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
-  will-change: opacity, transform;
 }
 
 .glass-card {
@@ -102,10 +100,10 @@ body {
 
 @media (prefers-color-scheme: dark) {
   .header-glass {
-    background: linear-gradient(135deg, rgb(255 255 255 / 0.92), rgb(255 255 255 / 0.72) 48%, rgb(255 255 255 / 0.86));
+    background: linear-gradient(135deg, rgb(255 255 255 / 0.94), rgb(255 255 255 / 0.84) 48%, rgb(255 255 255 / 0.9));
     border-color: rgb(255 255 255 / 0.72);
     box-shadow:
-      0 18px 44px rgb(15 23 42 / 0.14),
+      0 12px 28px rgb(15 23 42 / 0.1),
       0 1px 0 rgb(255 255 255 / 0.74),
       inset 0 1px 0 rgb(255 255 255 / 0.9),
       inset 0 -1px 0 rgb(255 255 255 / 0.32);
@@ -123,10 +121,10 @@ body {
   .header-menu-glass {
     background:
       radial-gradient(circle at 20% 0%, rgb(255 255 255 / 0.9), transparent 34%),
-      linear-gradient(135deg, rgb(255 255 255 / 0.9), rgb(255 255 255 / 0.68));
+      linear-gradient(135deg, rgb(255 255 255 / 0.94), rgb(255 255 255 / 0.82));
     border-color: rgb(255 255 255 / 0.68);
     box-shadow:
-      0 16px 38px rgb(15 23 42 / 0.12),
+      0 12px 28px rgb(15 23 42 / 0.1),
       inset 0 1px 0 rgb(255 255 255 / 0.82);
   }
 }
@@ -207,24 +205,20 @@ body {
 .home-reveal {
   animation: home-fade-lift 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--home-delay, 0ms);
-  will-change: opacity, transform;
 }
 
 .home-scale-in {
   animation: home-soft-scale 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: var(--home-delay, 0ms);
-  will-change: opacity, transform;
 }
 
 .home-scroll-stable {
   animation: home-fade-in 0.75s ease-out both;
   animation-delay: var(--home-delay, 0ms);
-  will-change: opacity;
 }
 
 .home-drift {
-  animation: home-drift 14s ease-in-out infinite;
-  will-change: transform;
+  animation: home-drift 24s ease-in-out infinite;
 }
 
 .home-shine {

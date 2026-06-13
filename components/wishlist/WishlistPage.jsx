@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Heart, ShieldCheck, ShoppingBag, Trash2, XCircle } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
-import { LoaderBlock } from '@/components/ui/loader';
+import { LoaderBlock, LoadingLabel } from '@/components/ui/loader';
 import {
   useClearWishlist,
   useDeleteWishlistItem,
@@ -107,8 +107,16 @@ export default function WishlistPage() {
               disabled={clearWishlist.isPending}
               className="inline-flex h-11 items-center justify-center gap-2 self-start border border-gray-200 px-5 text-sm font-semibold text-gray-700 transition hover:border-gray-950 hover:text-gray-950 disabled:cursor-not-allowed disabled:opacity-50 lg:self-auto"
             >
-              <Trash2 className="h-4 w-4" />
-              {clearWishlist.isPending ? 'Clearing...' : 'Clear Wishlist'}
+              {clearWishlist.isPending ? (
+                <LoadingLabel>
+                  Clearing...
+                </LoadingLabel>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Clear Wishlist
+                </>
+              )}
             </button>
           </div>
 
@@ -136,8 +144,16 @@ export default function WishlistPage() {
                       disabled={isItemBusy}
                       className="inline-flex h-10 w-full items-center justify-center gap-2 border border-red-100 px-3 text-xs font-bold uppercase tracking-wide text-red-700 transition hover:border-red-300 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      {isItemBusy ? 'Working' : 'Remove'}
+                      {isItemBusy ? (
+                        <LoadingLabel>
+                          Working
+                        </LoadingLabel>
+                      ) : (
+                        <>
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Remove
+                        </>
+                      )}
                     </button>
                   </div>
                 </article>

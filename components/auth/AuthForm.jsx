@@ -4,11 +4,10 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LoaderBlock } from '@/components/ui/loader';
+import { LoadingLabel } from '@/components/ui/loader';
 import AuthField from '@/components/auth/AuthField';
 import { useLogin, useRegister } from '@/hooks/auth';
 import { useAuthSession } from '@/hooks/auth/use-auth-session';
-import { useAuthGuard } from '@/hooks/use-auth-guard';
 import { buildAuthPayload } from '@/lib/auth/fields';
 import { APP_ROUTES, AUTH_PAGE_ROUTES, withRedirect } from '@/lib/routes';
 import { cn } from '@/lib/utils';
@@ -43,7 +42,6 @@ export default function AuthForm({
   redirectTo = '/',
 }) {
   const router = useRouter();
-  const { isHydrated } = useAuthGuard({ redirectTo });
   const { applyAuthResponse } = useAuthSession();
   const loginMutation = useLogin();
   const registerMutation = useRegister();
@@ -116,12 +114,6 @@ export default function AuthForm({
     fieldKeys.includes('email') &&
     fieldKeys.includes('password');
 
-  if (!isHydrated) {
-    return (
-      <LoaderBlock className="min-h-[320px] max-w-md py-0" />
-    );
-  }
-
   return (
     <div className="w-full max-w-md">
       <div className="mb-8 text-left">
@@ -180,7 +172,13 @@ export default function AuthForm({
             '!bg-[#C99B4D] text-primary-foreground hover:!bg-[#C99B4D]/90',
           )}
         >
-          {isSubmitting ? 'Please wait…' : submitLabel}
+          {isSubmitting ? (
+            <LoadingLabel spinnerClassName="border-white border-t-transparent">
+              Please wait...
+            </LoadingLabel>
+          ) : (
+            submitLabel
+          )}
         </Button>
 
         <div className="space-y-3 text-center text-sm">

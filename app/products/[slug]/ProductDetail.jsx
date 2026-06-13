@@ -1,14 +1,21 @@
 'use client';
 
 import Image from 'next/image';
-import { useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Minus, Plus, Share2 } from 'lucide-react';
 import Header from '../../../components/Header';
 import CartDrawer from '@/components/cart/CartDrawer';
+import CartToast from '@/components/cart/CartToast';
 import ProductList from '@/components/ProductList';
+import SizeChartModal from '@/components/SizeChartModal';
 import WishlistButton from '@/components/WishlistButton';
-import { LoaderBlock } from '@/components/ui/loader';
+import { LoaderBlock, LoadingLabel } from '@/components/ui/loader';
+import {
+  CART_DUPLICATE_MESSAGE,
+  hasCartItemWithProductSize,
+  isDuplicateCartError,
+} from '@/lib/cart/duplicate';
 import { useCartStore } from '@/lib/cart/store';
 import { APP_ROUTES } from '@/lib/routes';
 import { useProductBySlug } from '@/hooks/use-products';
@@ -43,12 +50,15 @@ function getProductImages(product) {
 export default function ProductDetail({ product: initialProduct, slug }) {
   const router = useRouter();
   const setCart = useCartStore((state) => state.setCart);
+  const cartItems = useCartStore((state) => state.items);
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(null);
   const [bagDrawerOpen, setBagDrawerOpen] = useState(false);
   const [cartLoading, setCartLoading] = useState(false);
   const [cartError, setCartError] = useState('');
+  const [cartToast, setCartToast] = useState(null);
   const [selectedSize, setSelectedSize] = useState('');
+  const [sizeChartOpen, setSizeChartOpen] = useState(false);
   const [showFullInfo, setShowFullInfo] = useState(false);
   const [activeDetailTab, setActiveDetailTab] = useState('information');
   const { data: fetchedProduct, isLoading, isError } = useProductBySlug(slug, {
@@ -74,6 +84,17 @@ export default function ProductDetail({ product: initialProduct, slug }) {
   const selectedQuantity = Number(quantity) || 1;
   const quantityLimit = selectedSizeOption?.quantity > 0 ? selectedSizeOption.quantity : null;
   const canSubmit = Boolean(selectedSizeOption?.id && selectedQuantity > 0);
+
+  useEffect(() => {
+    if (!cartToast) return undefined;
+
+    const timer = window.setTimeout(() => setCartToast(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [cartToast]);
+
+  const showDuplicateCartToast = () => {
+    setCartToast({ message: CART_DUPLICATE_MESSAGE, type: 'info' });
+  };
 
   if (isLoading) {
     return (
@@ -121,6 +142,12 @@ export default function ProductDetail({ product: initialProduct, slug }) {
       return false;
     }
 
+    if (hasCartItemWithProductSize(cartItems, selectedSizeOption.id)) {
+      setCartError('');
+      showDuplicateCartToast();
+      return false;
+    }
+
     setCartError('');
     setCartLoading(true);
     setBagDrawerOpen(true);
@@ -133,6 +160,12 @@ export default function ProductDetail({ product: initialProduct, slug }) {
       await refreshCart();
       return true;
     } catch (error) {
+      if (isDuplicateCartError(error)) {
+        setBagDrawerOpen(false);
+        showDuplicateCartToast();
+        return false;
+      }
+
       setCartError(error?.response?.data?.message || error?.message || 'Unable to add this product to your bag.');
       return false;
     } finally {
@@ -269,6 +302,7 @@ export default function ProductDetail({ product: initialProduct, slug }) {
                 <h2 className="text-lg font-bold text-gray-950">Size</h2>
                 <button
                   type="button"
+                  onClick={() => setSizeChartOpen(true)}
                   className="text-sm font-semibold uppercase text-gray-500 transition hover:text-gray-950"
                 >
                   Size Guide
@@ -303,7 +337,7 @@ export default function ProductDetail({ product: initialProduct, slug }) {
               )}
             </div>
 
-            <div className="flex items-center justify-between border-b border-gray-100 py-7">
+            <div className="flex items-center justify-between border-b border-gray-100 py-3">
               <span className="text-lg font-bold text-gray-950">Quantity</span>
               <div className="flex items-center gap-4 text-lg font-semibold text-gray-950">
                 <button
@@ -331,14 +365,20 @@ export default function ProductDetail({ product: initialProduct, slug }) {
               </div>
             </div>
 
-            <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t border-gray-100 bg-white p-3 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] sm:static sm:z-auto sm:gap-3 sm:border-0 sm:bg-transparent sm:p-0 sm:py-7 sm:shadow-none">
+            <div className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t border-gray-100 bg-white p-3 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] sm:static sm:z-auto sm:gap-3 sm:border-0 sm:bg-transparent sm:p-0 sm:py-3 sm:shadow-none">
               <button
                 type="button"
                 onClick={addCurrentToBag}
                 disabled={cartLoading || !canSubmit}
                 className="w-full bg-gray-950 px-4 py-4 text-[14px] font-semibold uppercase text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:bg-gray-300 sm:px-7 sm:text-[14px] "
               >
-                {cartLoading ? 'Adding...' : 'Add to Cart'}
+                {cartLoading ? (
+                  <LoadingLabel spinnerClassName="border-white border-t-transparent">
+                    Adding...
+                  </LoadingLabel>
+                ) : (
+                  'Add to Cart'
+                )}
               </button>
               <button
                 type="button"
@@ -531,6 +571,7 @@ export default function ProductDetail({ product: initialProduct, slug }) {
         isLoading={cartLoading}
         error={cartError}
       />
+      <SizeChartModal open={sizeChartOpen} onClose={() => setSizeChartOpen(false)} />
     </div>
   );
 }

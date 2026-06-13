@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { CircleCheck, PackageCheck } from 'lucide-react';
+import { LoaderBlock } from '@/components/ui/loader';
 import { APP_ROUTES } from '@/lib/routes';
 import { getOrderDetailApi } from '@/services/checkout';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -59,11 +60,7 @@ export default function OrderSuccess({ orderId }) {
 
         <div className="mx-auto mt-8 max-w-xl rounded-3xl border border-gray-100 bg-[#fbfaf7] p-5 text-left">
           {loading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((item) => (
-                <div key={item} className="h-5 animate-pulse rounded-full bg-gray-100" />
-              ))}
-            </div>
+            <LoaderBlock className="py-8" />
           ) : error ? (
             <p className="text-sm font-semibold text-red-700">{error}</p>
           ) : (

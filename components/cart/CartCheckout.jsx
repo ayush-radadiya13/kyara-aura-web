@@ -30,7 +30,7 @@ export default function CartCheckout() {
   };
 
   return (
-    <div className="bg-[#f7f7f5]">
+    <div >
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 px-4 py-8 sm:py-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-8">
         <CartBag />
 

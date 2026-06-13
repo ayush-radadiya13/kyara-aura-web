@@ -1,54 +1,38 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import CategoryGrid from "@/components/CategoryGrid";
 import ProductList from "@/components/ProductList";
-import { useCategories } from "@/hooks/use-categories";
 
 export default function CategoryBrowser() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const queryCategoryId = searchParams.get("category") ?? "";
-  const { data: categories = [] } = useCategories();
-  const [localCategoryId, setLocalCategoryId] = useState("");
-  const selectedCategoryId = queryCategoryId || localCategoryId || categories[0]?._id || "";
-
-  const selectedCategory = categories.find(
-    (category) => String(category._id) === String(selectedCategoryId)
-  );
-
-  const handleCategorySelect = (category) => {
-    setLocalCategoryId(category._id);
-    router.push(`/products?category=${encodeURIComponent(category._id)}`);
-  };
-
   return (
-    <>
-      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6">
-        <CategoryGrid
-          variant="strip"
-          selectedCategoryId={selectedCategoryId}
-          onCategorySelect={handleCategorySelect}
-        />
-      </section>
-
-      <section className="mx-auto max-w-7xl border-t border-gray-100 px-4 pb-20 sm:px-6">
-        <div className="mb-8 pt-12">
-          <h2 className="font-display text-3xl font-light text-gray-950 sm:text-4xl">
-            {selectedCategory ? `${selectedCategory.name} Products` : "Category Products"}
-          </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600">
-            Browse pieces from the selected category.
+    <section className="mx-auto max-w-7xl px-4 pb-20 sm:px-6">
+      <div className="mb-8 pt-4">
+        <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-gold">
+          Choose a category
+        </p>
+        <h2 className="font-display text-xl font-light text-gray-950 sm:text-2xl">
+          Shop by Category
+        </h2>
+      </div>
+      <div >
+        <CategoryGrid variant="strip" stackOnMobile />
+      </div>
+      <div className="border-t border-gray-100 pt-12">
+        <div className="mb-8">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.28em] text-gold">
+            Customer Favorites
           </p>
+          <h2 className="font-display text-xl font-light text-gray-950 sm:text-2xl">
+            Best Seller
+          </h2>
         </div>
         <ProductList
-          key={selectedCategoryId || "category-products"}
-          categoryId={selectedCategoryId}
+          featured
+          pageSize={12}
           variant="editorial"
-          emptyMessage="No products available for this category."
+          emptyMessage="No featured products available at the moment."
         />
-      </section>
-    </>
+      </div>
+    </section>
   );
 }

@@ -1,8 +1,16 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import "lenis/dist/lenis.css";
 import "./globals.css";
 import QueryProvider from "@/providers/query-provider";
 import SmoothScrollProvider from "@/providers/smooth-scroll-provider";
 import ConditionalFooter from "@/components/ConditionalFooter";
+import {
+  DEFAULT_SEO_DESCRIPTION,
+  DEFAULT_SEO_TITLE,
+  SITE_NAME,
+  getSiteUrl,
+  metadataForPage,
+} from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +23,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Kyara Aura Jewellery",
-  description:
-    "Luxury jewellery storefront built with Next.js and Tailwind CSS.",
+  metadataBase: getSiteUrl(),
+  applicationName: SITE_NAME,
+  ...metadataForPage({
+    title: DEFAULT_SEO_TITLE,
+    description: DEFAULT_SEO_DESCRIPTION,
+    path: "/",
+  }),
 };
 
 export default function RootLayout({ children }) {

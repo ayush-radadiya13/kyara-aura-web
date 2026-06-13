@@ -1,6 +1,5 @@
 const STEPS = [
-  { id: 1, label: 'Login / Register' },
-  { id: 2, label: 'Payment Method' },
+  { id: 1, label: 'Payment Method' },
 ];
 
 /**

@@ -27,3 +27,12 @@ export function LoaderBlock({ className, spinnerClassName, size = "lg" }) {
     </div>
   );
 }
+
+export function LoadingLabel({ children, className, spinnerClassName, size = "sm" }) {
+  return (
+    <span className={cn("inline-flex items-center justify-center gap-2", className)}>
+      <Loader size={size} className={cn("shrink-0", spinnerClassName)} />
+      <span>{children}</span>
+    </span>
+  );
+}

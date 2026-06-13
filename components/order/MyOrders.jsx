@@ -13,7 +13,8 @@ import {
   ShieldCheck,
   XCircle,
 } from 'lucide-react';
-import { APP_ROUTES, AUTH_PAGE_ROUTES, withRedirect } from '@/lib/routes';
+import { LoaderBlock, LoadingLabel } from '@/components/ui/loader';
+import { APP_ROUTES, AUTH_PAGE_ROUTES } from '@/lib/routes';
 import { cancelOrderApi, getOrderDetailApi, getOrdersApi, returnOrderApi } from '@/services/checkout';
 import { useAuthStore } from '@/store/auth-store';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -122,7 +123,7 @@ export default function MyOrders() {
   if (!isHydrated || (isAuthenticated && loading)) {
     return (
       <section className="mx-auto max-w-6xl px-4 py-12">
-        <OrdersSkeleton />
+        <LoaderBlock />
       </section>
     );
   }
@@ -136,7 +137,7 @@ export default function MyOrders() {
           <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
             Order listing, details, and cancellation are protected.
           </p>
-          <Link href={withRedirect(AUTH_PAGE_ROUTES.LOGIN, APP_ROUTES.ORDERS)} className="mt-7 inline-flex h-12 items-center justify-center bg-[#4f3128] px-7 text-sm font-bold text-white transition hover:bg-[#3d261f]">
+          <Link href={AUTH_PAGE_ROUTES.LOGIN} className="mt-7 inline-flex h-12 items-center justify-center bg-gray-950 px-7 text-sm font-bold text-white transition hover:bg-gray-800">
             Login to Continue
           </Link>
         </div>
@@ -145,8 +146,8 @@ export default function MyOrders() {
   }
 
   return (
-    <section className="mx-auto max-w-7xl px-4 py-8 sm:py-12">
-      <div className="mb-6">
+    <section className="mx-auto flex w-full max-w-7xl flex-col px-4 py-6 sm:py-8 xl:h-[calc(100vh-5rem)] xl:overflow-hidden">
+      <div className="mb-5 shrink-0">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-gray-400">My account</p>
         <h1 className="mt-2 text-3xl font-bold text-gray-950 sm:text-4xl">Orders</h1>
       </div>
@@ -163,32 +164,34 @@ export default function MyOrders() {
           </Link>
         </div>
       ) : (
-        <div className="grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className="space-y-3 xl:sticky xl:top-24 xl:self-start">
-            <div className="rounded-[1.75rem] border border-gray-100 bg-white p-4 shadow-[0_18px_50px_rgba(17,24,39,0.06)]">
+        <div className="grid gap-5 xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(280px,360px)_minmax(0,1fr)] xl:items-start xl:overflow-hidden">
+          <aside className="space-y-3 xl:flex xl:h-full xl:min-h-0 xl:flex-col">
+            <div className="shrink-0 rounded-[1.5rem] border border-gray-100 bg-white p-4 shadow-[0_12px_34px_rgba(17,24,39,0.05)]">
               <h2 className="text-lg font-bold text-gray-950">Order history</h2>
               <p className="mt-1 text-sm text-gray-500">Select an order to preview details.</p>
             </div>
-            {orders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                selected={selectedOrder?.id === order.id}
-                loading={actionOrderId === order.id}
-                onView={() => loadOrderDetail(order.id)}
-                onCancel={() => handleCancelOrder(order.id)}
-                onReturn={() => handleReturnOrder(order.id)}
-              />
-            ))}
+            <div className="space-y-3 xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:pr-2" data-lenis-prevent>
+              {orders.map((order) => (
+                <OrderCard
+                  key={order.id}
+                  order={order}
+                  selected={selectedOrder?.id === order.id}
+                  loading={actionOrderId === order.id}
+                  onView={() => loadOrderDetail(order.id)}
+                  onCancel={() => handleCancelOrder(order.id)}
+                  onReturn={() => handleReturnOrder(order.id)}
+                />
+              ))}
+            </div>
           </aside>
 
-          <div className="rounded-[2rem] border border-gray-100 bg-white p-4 shadow-[0_24px_70px_rgba(17,24,39,0.08)] sm:p-6">
+          <div className="rounded-[1.5rem] border border-gray-100 bg-white p-4 shadow-[0_14px_40px_rgba(17,24,39,0.06)] sm:p-5 xl:max-h-full xl:overflow-hidden">
             {detailLoading ? (
-              <OrderDetailSkeleton />
+              <LoaderBlock className="min-h-[360px] rounded-[1.25rem] border border-gray-100 py-0" />
             ) : selectedOrder ? (
               <OrderDetail order={selectedOrder} />
             ) : (
-              <div className="flex min-h-[420px] items-center justify-center rounded-[1.5rem] border border-dashed border-gray-200 text-center">
+              <div className="flex min-h-[360px] items-center justify-center rounded-[1.25rem] border border-dashed border-gray-200 text-center">
                 <div>
                   <PackageCheck className="mx-auto h-10 w-10 text-gray-300" />
                   <p className="mt-3 text-sm font-semibold text-gray-500">Select an order to view details.</p>
@@ -208,7 +211,7 @@ function OrderCard({ order, selected, loading, onView, onCancel, onReturn }) {
   const canReturn = status === 'delivered';
 
   return (
-    <article className={`rounded-[1.75rem] border bg-white p-4 shadow-[0_16px_45px_rgba(17,24,39,0.05)] ${selected ? 'border-blue-400 ring-2 ring-blue-50' : 'border-gray-100'}`}>
+    <article className={`rounded-[1.5rem] border bg-white p-4 shadow-[0_12px_34px_rgba(17,24,39,0.05)] ${selected ? 'border-gray-950 ring-2 ring-gray-950/10' : 'border-gray-100'}`}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Order number</p>
@@ -220,7 +223,7 @@ function OrderCard({ order, selected, loading, onView, onCancel, onReturn }) {
         <p className="text-lg font-bold text-gray-950">{formatMoney(order.total_amount)}</p>
       </div>
       <div className="mt-5 flex flex-wrap gap-2">
-        <button type="button" onClick={onView} className="h-10 rounded-full bg-blue-500 px-4 text-sm font-bold text-white transition hover:bg-blue-600">
+        <button type="button" onClick={onView} className="h-10 rounded-full bg-gray-950 px-4 text-sm font-bold text-white transition hover:bg-gray-800">
           View details
         </button>
         <Link href={`/order-success/${order.id}`} className="inline-flex h-10 items-center rounded-full border border-gray-200 px-4 text-sm font-bold text-gray-700 transition hover:border-gray-950">
@@ -228,12 +231,24 @@ function OrderCard({ order, selected, loading, onView, onCancel, onReturn }) {
         </Link>
         {canCancel ? (
           <button type="button" onClick={onCancel} disabled={loading} className="h-10 rounded-full border border-red-100 px-4 text-sm font-bold text-red-700 transition hover:border-red-300 disabled:opacity-50">
-            {loading ? 'Cancelling...' : 'Cancel order'}
+            {loading ? (
+              <LoadingLabel>
+                Cancelling...
+              </LoadingLabel>
+            ) : (
+              'Cancel order'
+            )}
           </button>
         ) : null}
         {canReturn ? (
           <button type="button" onClick={onReturn} disabled={loading} className="h-10 rounded-full border border-amber-100 px-4 text-sm font-bold text-amber-700 transition hover:border-amber-300 disabled:opacity-50">
-            {loading ? 'Returning...' : 'Return order'}
+            {loading ? (
+              <LoadingLabel>
+                Returning...
+              </LoadingLabel>
+            ) : (
+              'Return order'
+            )}
           </button>
         ) : null}
       </div>
@@ -250,43 +265,47 @@ function OrderDetail({ order }) {
   const addressLines = getAddressLines(order);
 
   return (
-    <div>
-      <nav className="flex flex-wrap items-center gap-2 text-sm font-medium text-gray-400">
-        <Link href={APP_ROUTES.HOME} className="transition hover:text-gray-800">Home</Link>
-        <span>/</span>
-        <Link href={APP_ROUTES.ORDERS} className="transition hover:text-gray-800">Orders</Link>
-        <span>/</span>
-        <span className="text-gray-500">{getOrderNumber(order)}</span>
-      </nav>
-
-      <div className="mt-5 flex flex-col gap-4 border-b border-gray-100 pb-6 lg:flex-row lg:items-start lg:justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-950 sm:text-4xl">
-            Order ID: {getOrderNumber(order, false)}
-          </h2>
-          <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm sm:text-base">
-            <span className="text-gray-400">Order date: <span className="font-semibold text-gray-700">{orderDate}</span></span>
-            <span className="hidden h-5 w-px bg-gray-200 sm:inline-block" />
-            <span className="inline-flex items-center gap-2 font-bold text-green-500">
-              <Plane className="h-4 w-4" />
-              Estimated delivery: {estimatedDelivery}
+    <div className="space-y-4">
+      <div className="rounded-[1.25rem] bg-[#fbfaf7] p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-gray-500">Order details</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-gray-950">
+              {getOrderNumber(order)}
+            </h2>
+            <span className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-bold capitalize text-gray-600 ring-1 ring-gray-100">
+              {order.status ?? 'pending'} / {order.payment_status ?? 'pending'}
             </span>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <button type="button" className="inline-flex h-10 items-center justify-center gap-2 rounded-full border border-gray-200 bg-white px-4 text-sm font-bold text-gray-700 transition hover:border-gray-950 hover:text-gray-950">
+              <FileText className="h-4 w-4" />
+              Invoice
+            </button>
+            <button type="button" className="inline-flex h-10 items-center justify-center gap-2 rounded-full bg-gray-950 px-4 text-sm font-bold text-white transition hover:bg-gray-800">
+              Track order
+              <LocateFixed className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
-        <div className="flex shrink-0 gap-2">
-          <button type="button" className="inline-flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 text-sm font-bold text-gray-700 transition hover:border-gray-300 hover:bg-white">
-            <FileText className="h-4 w-4" />
-            Invoice
-          </button>
-          <button type="button" className="inline-flex h-11 items-center gap-2 rounded-xl bg-blue-500 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-blue-600">
-            Track order
-            <LocateFixed className="h-4 w-4" />
-          </button>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl bg-white p-3 ring-1 ring-gray-100">
+            <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Order date</p>
+            <p className="mt-2 font-semibold text-gray-800">{orderDate}</p>
+          </div>
+          <div className="rounded-2xl bg-white p-3 ring-1 ring-gray-100">
+            <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gray-400">
+              <Plane className="h-4 w-4 text-gray-950" />
+              Estimated delivery
+            </p>
+            <p className="mt-2 font-semibold text-gray-800">{estimatedDelivery}</p>
+          </div>
         </div>
       </div>
 
-      <div className="divide-y divide-gray-100">
+      <div className="divide-y divide-gray-100 rounded-[1.25rem] border border-gray-100 px-4">
         {items.length ? (
           items.map((item, index) => (
             <OrderItemRow key={`${item.id ?? getItemName(item)}-${index}`} item={item} />
@@ -296,11 +315,11 @@ function OrderDetail({ order }) {
         )}
       </div>
 
-      <div className="grid gap-8 border-t border-gray-100 pt-6 md:grid-cols-2">
-        <div>
-          <h3 className="text-xl font-bold text-gray-950">Payment</h3>
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-[1.25rem] border border-gray-100 p-4">
+          <h3 className="text-lg font-bold text-gray-950">Payment</h3>
           <div className="mt-5 flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-100 text-gray-950">
               <CreditCard className="h-5 w-5" />
             </div>
             <div>
@@ -316,15 +335,15 @@ function OrderDetail({ order }) {
           </dl>
         </div>
 
-        <div>
-          <h3 className="text-xl font-bold text-gray-950">Delivery</h3>
+        <div className="rounded-[1.25rem] border border-gray-100 p-4">
+          <h3 className="text-lg font-bold text-gray-950">Delivery</h3>
           <div className="mt-5 flex gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-500">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-950">
               <MapPin className="h-5 w-5" />
             </div>
             <div>
               <p className="font-semibold text-gray-400">Address</p>
-              <div className="mt-2 space-y-1 text-lg font-medium leading-7 text-gray-700">
+              <div className="mt-2 space-y-1 text-base font-medium leading-7 text-gray-700">
                 {addressLines.length ? (
                   addressLines.map((line) => <p key={line}>{line}</p>)
                 ) : (
@@ -353,18 +372,16 @@ function Amount({ label, value, strong = false }) {
 function OrderItemRow({ item }) {
   const productName = getItemName(item);
   const itemImageSrc = getItemImageSrc(item);
-  const isRemoteImage = itemImageSrc.startsWith('http');
   const attributes = [item.color, item.variant, item.size_text ?? item.product_size?.size_text ?? item.size].filter(Boolean);
 
   return (
-    <article className="grid gap-4 py-5 sm:grid-cols-[88px_minmax(0,1fr)_auto] sm:items-center">
-      <div className="relative h-22 w-22 overflow-hidden rounded-xl border border-gray-100 bg-gray-50 sm:h-20 sm:w-20">
+    <article className="grid gap-3 py-3 sm:grid-cols-[72px_minmax(0,1fr)_auto] sm:items-center">
+      <div className="relative h-[4.5rem] w-[4.5rem] overflow-hidden rounded-xl border border-gray-100 bg-gray-50 sm:h-16 sm:w-16">
         {itemImageSrc ? (
           <Image
             src={itemImageSrc}
             alt={productName}
             fill
-            unoptimized={isRemoteImage}
             className="object-contain p-2"
             sizes="80px"
           />
@@ -376,15 +393,15 @@ function OrderItemRow({ item }) {
       </div>
 
       <div>
-        <h3 className="text-xl font-medium text-gray-700">{productName}</h3>
-        <p className="mt-2 text-sm font-medium text-gray-400">
+        <h3 className="text-base font-semibold text-gray-700">{productName}</h3>
+        <p className="mt-1 text-sm font-medium text-gray-400">
           {attributes.length ? attributes.join(' | ') : 'Product details'}
         </p>
       </div>
 
       <div className="text-left sm:text-right">
-        <p className="text-xl font-bold text-gray-950">{formatMoney(getItemTotal(item))}</p>
-        <p className="mt-2 text-sm font-semibold text-gray-400">Qty: {item.quantity ?? 1}</p>
+        <p className="text-base font-bold text-gray-950">{formatMoney(getItemTotal(item))}</p>
+        <p className="mt-1 text-sm font-semibold text-gray-400">Qty: {item.quantity ?? 1}</p>
       </div>
     </article>
   );
@@ -396,38 +413,6 @@ function Message({ tone, message }) {
     <div className={`mb-5 flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm font-semibold ${isError ? 'border-red-200 bg-red-50 text-red-700' : 'border-green-200 bg-green-50 text-green-700'}`}>
       {isError ? <XCircle className="mt-0.5 h-5 w-5 shrink-0" /> : <PackageCheck className="mt-0.5 h-5 w-5 shrink-0" />}
       <span>{message}</span>
-    </div>
-  );
-}
-
-function OrdersSkeleton({ compact = false }) {
-  return (
-    <div className="space-y-4">
-      {[1, 2, 3].slice(0, compact ? 2 : 3).map((item) => (
-        <div key={item} className="h-28 animate-pulse rounded-[2rem] bg-gray-100" />
-      ))}
-    </div>
-  );
-}
-
-function OrderDetailSkeleton() {
-  return (
-    <div className="animate-pulse space-y-6">
-      <div className="h-5 w-64 rounded-full bg-gray-100" />
-      <div className="space-y-3 border-b border-gray-100 pb-6">
-        <div className="h-10 w-2/3 rounded-full bg-gray-100" />
-        <div className="h-5 w-1/2 rounded-full bg-gray-100" />
-      </div>
-      {[1, 2, 3].map((item) => (
-        <div key={item} className="grid gap-4 sm:grid-cols-[88px_minmax(0,1fr)_140px] sm:items-center">
-          <div className="h-20 w-20 rounded-xl bg-gray-100" />
-          <div className="space-y-3">
-            <div className="h-5 w-1/2 rounded-full bg-gray-100" />
-            <div className="h-4 w-1/3 rounded-full bg-gray-100" />
-          </div>
-          <div className="h-5 w-28 rounded-full bg-gray-100" />
-        </div>
-      ))}
     </div>
   );
 }

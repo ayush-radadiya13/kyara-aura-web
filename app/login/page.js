@@ -18,7 +18,7 @@ export default async function LoginPage({ searchParams }) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <main className="flex flex-1 items-center justify-center overflow-hidden px-4 py-4 sm:py-6">
+      <main className="flex flex-1 items-center bg-white justify-center overflow-hidden px-4 py-4 sm:py-6">
         <AuthSplitLayout
           videoSrc="/vedio/logo_animation.mp4"
           videoLabel="Kyara Aura logo animation"

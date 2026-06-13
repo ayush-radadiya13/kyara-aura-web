@@ -6,6 +6,7 @@ import { useLenis } from "lenis/react";
 let activeLocks = 0;
 let previousBodyOverflow = "";
 let previousDocumentOverflow = "";
+let lockedLenis = null;
 
 export function useScrollLock(locked) {
   const lenis = useLenis();
@@ -20,6 +21,7 @@ export function useScrollLock(locked) {
       previousDocumentOverflow = documentElement.style.overflow;
       body.style.overflow = "hidden";
       documentElement.style.overflow = "hidden";
+      lockedLenis = lenis ?? null;
       lenis?.stop();
     }
 
@@ -31,8 +33,9 @@ export function useScrollLock(locked) {
       if (activeLocks === 0) {
         body.style.overflow = previousBodyOverflow;
         documentElement.style.overflow = previousDocumentOverflow;
-        lenis?.resize();
-        lenis?.start();
+        lockedLenis?.resize();
+        lockedLenis?.start();
+        lockedLenis = null;
       }
     };
   }, [lenis, locked]);

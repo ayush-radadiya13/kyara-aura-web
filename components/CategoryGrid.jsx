@@ -21,6 +21,7 @@ export default function CategoryGrid({
   limit,
   selectedCategoryId,
   onCategorySelect,
+  stackOnMobile = false,
 }) {
   const { data: categories = [], isLoading, isError } = useCategories();
   const visibleCategories = limit ? categories.slice(0, limit) : categories;
@@ -38,12 +39,22 @@ export default function CategoryGrid({
   }
 
   if (variant === "strip") {
+    const wrapperClassName = stackOnMobile
+      ? "flex flex-col gap-5 pb-3 sm:grid sm:grid-cols-2 sm:pb-0 lg:grid-cols-3"
+      : "-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden";
+    const mobileCardClassName = stackOnMobile
+      ? "w-full"
+      : "w-[78vw] max-w-[22rem] shrink-0 snap-start";
+
     return (
-      <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-3 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden">
+      <div
+        className={wrapperClassName}
+        data-lenis-prevent
+      >
         {visibleCategories.map((category) => {
           const src = categoryImageSrc(category.image);
           const isSelected = String(selectedCategoryId ?? "") === String(category._id ?? "");
-          const interactiveClassName = `group relative aspect-[1.75] w-[78vw] max-w-[22rem] shrink-0 snap-start overflow-hidden rounded-2xl bg-[#f7f3ed] text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-gray-950/10 focus:outline-none focus:ring-2 focus:ring-gray-900/30 sm:w-auto sm:max-w-none ${
+          const interactiveClassName = `group relative aspect-[1.75] ${mobileCardClassName} overflow-hidden rounded-2xl bg-[#f7f3ed] text-left shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-gray-950/10 focus:outline-none focus:ring-2 focus:ring-gray-900/30 sm:w-auto sm:max-w-none ${
             isSelected ? "ring-2 ring-gray-950 ring-offset-2 ring-offset-white" : ""
           }`;
           const content = (

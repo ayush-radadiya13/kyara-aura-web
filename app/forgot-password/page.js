@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import AuthSplitLayout from '@/components/auth/AuthSplitLayout';
 import { Button } from '@/components/ui/button';
+import { LoadingLabel } from '@/components/ui/loader';
 import { useForgotPassword } from '@/hooks/auth';
 import { APP_ROUTES } from '@/lib/routes';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -41,7 +42,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <main className="flex flex-1 items-center justify-center overflow-hidden px-4 py-4 sm:py-6">
+      <main className="flex flex-1 items-center bg-white justify-center overflow-hidden px-4 py-4 sm:py-6">
         <AuthSplitLayout
           videoSrc="/vedio/logo_animation.mp4"
           videoLabel="Kyara Aura logo animation"
@@ -92,7 +93,13 @@ export default function ForgotPasswordPage() {
                 disabled={forgotPasswordMutation.isPending}
                 className="h-12 w-full rounded-none !bg-[#C99B4D] text-base font-semibold text-primary-foreground hover:!bg-[#C99B4D]/90"
               >
-                {forgotPasswordMutation.isPending ? 'Sending...' : 'Send reset link'}
+                {forgotPasswordMutation.isPending ? (
+                  <LoadingLabel spinnerClassName="border-white border-t-transparent">
+                    Sending...
+                  </LoadingLabel>
+                ) : (
+                  'Send reset link'
+                )}
               </Button>
 
               <Link

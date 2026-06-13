@@ -4,10 +4,44 @@ import Header from '../components/Header';
 import HeroCarousel from '../components/HeroCarousel';
 import CategoryGrid from '@/components/CategoryGrid';
 import ProductList from '@/components/ProductList';
+import { absoluteUrl, jsonLd, metadataForPage } from '@/lib/seo';
+
+const homeDescription =
+  'Discover Kyara Aura fashion jewellery, including gold plated bangles, earrings, necklaces, rings, and elegant pieces for everyday and occasion styling.';
+
+export const metadata = metadataForPage({
+  title: 'Kyara Aura | Fashion Jewellery for Women',
+  description: homeDescription,
+  path: '/',
+  images: ['/assets/home1.jpg'],
+});
 
 export default function HomePage() {
+  const organizationSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Kyara Aura',
+    url: absoluteUrl('/'),
+    logo: absoluteUrl('/assets/ka1.png'),
+    sameAs: [],
+  };
+  const websiteSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Kyara Aura',
+    url: absoluteUrl('/'),
+  };
+
   return (
       <div className="bg-white ">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLd(organizationSchema)}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={jsonLd(websiteSchema)}
+        />
         <Header />
         <div className="home-scroll-stable">
           <HeroCarousel variant="editorial" />
@@ -63,9 +97,9 @@ export default function HomePage() {
             <p className="home-reveal mb-4 text-[10px] font-semibold uppercase tracking-[0.45em] text-white/80" style={{ '--home-delay': '320ms' }}>
               Jewellery
             </p>
-            <h1 className="home-reveal font-display text-5xl font-light uppercase leading-[0.92] tracking-[-0.04em] sm:text-7xl lg:text-[92px]" style={{ '--home-delay': '420ms' }}>
+            <h2 className="home-reveal font-display text-5xl font-light uppercase leading-[0.92] tracking-[-0.04em] sm:text-7xl lg:text-[92px]" style={{ '--home-delay': '420ms' }}>
               New Arrival
-            </h1>
+            </h2>
             <p className="home-reveal mt-5 max-w-xl text-xs leading-5 text-white/85 sm:text-sm" style={{ '--home-delay': '520ms' }}>
               Presented in timeless adornment, for those who seek both beauty and refined minimalism.
             </p>
@@ -79,7 +113,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="home-scroll-stable mx-auto max-w-7xl px-4 pb-16 sm:px-6" style={{ '--home-delay': '120ms' }}>
+        <section className="home-scroll-stable mx-auto max-w-7xl px-4 pb-10 sm:px-6" style={{ '--home-delay': '120ms' }}>
           <div className="mb-10 grid grid-cols-2 items-center gap-8 text-center text-xs uppercase tracking-[0.28em] text-gray-300 sm:grid-cols-3 lg:grid-cols-6">
             {['Holliage', 'Aura', 'QKE', 'Bridal', 'Kyara', 'Lumiere'].map((brand, index) => (
                 <span
@@ -130,7 +164,7 @@ export default function HomePage() {
                       <div className="relative aspect-square overflow-hidden">
                         <Image
                             src={item.image}
-                            alt={item.title}
+                            alt={`${item.title} jewellery from Kyara Aura`}
                             fill
                             className="object-cover transition duration-500 group-hover:scale-105"
                             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 15vw"
@@ -149,7 +183,7 @@ export default function HomePage() {
 
         {/* Best Seller Products Section */}
         <section className="home-scroll-stable " style={{ '--home-delay': '140ms' }}>
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-20 sm:px-6 lg:grid-cols-[260px_1fr]">
+          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[260px_1fr]">
             <div className="home-reveal lg:pt-8" style={{ '--home-delay': '180ms' }}>
               <p className="mb-6 text-[10px] uppercase tracking-[0.32em] text-gray-400">Shop</p>
               <h2 className="font-display text-3xl font-light text-gray-950 sm:text-4xl">

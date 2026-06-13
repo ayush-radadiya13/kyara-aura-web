@@ -1,24 +1,48 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { ReactLenis } from "lenis/react";
 
 export default function SmoothScrollProvider({ children }) {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches);
+    };
+
+    updateMotionPreference();
+    mediaQuery.addEventListener("change", updateMotionPreference);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateMotionPreference);
+    };
+  }, []);
+
+  const options = useMemo(
+    () => ({
+      anchors: true,
+      autoResize: true,
+      autoRaf: true,
+      lerp: prefersReducedMotion ? 1 : 0.12,
+      overscroll: false,
+      prevent: (node) =>
+        node.closest?.(
+          "[data-lenis-prevent], [data-lenis-prevent-wheel], [data-lenis-prevent-touch], textarea, select, [contenteditable='true']",
+        ) !== null,
+      smoothWheel: !prefersReducedMotion,
+      syncTouch: false,
+      touchMultiplier: 1,
+      wheelMultiplier: 1,
+    }),
+    [prefersReducedMotion],
+  );
+
   return (
     <ReactLenis
       root
-      options={{
-        anchors: true,
-        autoResize: true,
-        autoRaf: true,
-        allowNestedScroll: true,
-        lerp: 0.08,
-        overscroll: false,
-        prevent: (node) => node.closest?.("[data-lenis-prevent]") !== null,
-        smoothWheel: true,
-        syncTouch: false,
-        touchMultiplier: 1.15,
-        wheelMultiplier: 0.9,
-      }}
+      options={options}
     >
       {children}
     </ReactLenis>

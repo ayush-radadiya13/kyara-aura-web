@@ -2,10 +2,17 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Heart, ShoppingBag } from 'lucide-react';
 import CartDrawer from '@/components/cart/CartDrawer';
+import CartToast from '@/components/cart/CartToast';
 import WishlistButton from '@/components/WishlistButton';
+import { Loader, LoadingLabel } from '@/components/ui/loader';
+import {
+  CART_DUPLICATE_MESSAGE,
+  hasCartItemWithProductSize,
+  isDuplicateCartError,
+} from '@/lib/cart/duplicate';
 import { useCartStore } from '@/lib/cart/store';
 import { addCartItemApi, getCartApi } from '@/services/cart';
 
@@ -43,9 +50,11 @@ export default function ProductCard({
   wishlistBusy = false,
 }) {
   const setCart = useCartStore((state) => state.setCart);
+  const cartItems = useCartStore((state) => state.items);
   const [bagDrawerOpen, setBagDrawerOpen] = useState(false);
   const [cartLoading, setCartLoading] = useState(false);
   const [cartError, setCartError] = useState('');
+  const [cartToast, setCartToast] = useState(null);
   const href = `/products/${product.slug}`;
   const originalPrice = product.oldPrice ?? product.originalPrice;
   const discountPercent =
@@ -54,23 +63,40 @@ export default function ProductCard({
       ? Math.round(((originalPrice - product.price) / originalPrice) * 100)
       : 0);
   const productImageSrc = getProductImageSrc(product);
-  const isRemoteProductImage = productImageSrc.startsWith('http');
   const productId = product.id ?? product._id;
   const wishlistLabel = wishlistActive ? 'Remove from wishlist' : 'Add to wishlist';
   const quickAddSize = getQuickAddSize(product);
 
+  useEffect(() => {
+    if (!cartToast) return undefined;
+
+    const timer = window.setTimeout(() => setCartToast(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [cartToast]);
+
+  const showDuplicateCartToast = () => {
+    setCartToast({ message: CART_DUPLICATE_MESSAGE, type: 'info' });
+  };
+
   const handleQuickAddToBag = async (event) => {
     event.preventDefault();
     event.stopPropagation();
-    setBagDrawerOpen(true);
 
     if (!quickAddSize?.id) {
       setCartError('Please select a size on the product page before adding this item.');
+      setBagDrawerOpen(true);
+      return;
+    }
+
+    if (hasCartItemWithProductSize(cartItems, quickAddSize.id)) {
+      setCartError('');
+      showDuplicateCartToast();
       return;
     }
 
     setCartError('');
     setCartLoading(true);
+    setBagDrawerOpen(true);
 
     try {
       await addCartItemApi({
@@ -80,6 +106,12 @@ export default function ProductCard({
       const cart = await getCartApi();
       setCart(cart);
     } catch (error) {
+      if (isDuplicateCartError(error)) {
+        setBagDrawerOpen(false);
+        showDuplicateCartToast();
+        return;
+      }
+
       setCartError(error?.response?.data?.message || error?.message || 'Unable to add this product to your bag.');
     } finally {
       setCartLoading(false);
@@ -101,11 +133,15 @@ export default function ProductCard({
           disabled={wishlistBusy}
           className={className}
         >
-          <Heart
-            className="h-4 w-4"
-            fill={wishlistActive ? 'currentColor' : 'none'}
-            strokeWidth={1.8}
-          />
+          {wishlistBusy ? (
+            <Loader size="sm" className="h-4 w-4 border-current border-t-transparent" />
+          ) : (
+            <Heart
+              className="h-4 w-4"
+              fill={wishlistActive ? 'currentColor' : 'none'}
+              strokeWidth={1.8}
+            />
+          )}
         </button>
       );
     }
@@ -140,7 +176,6 @@ export default function ProductCard({
                 src={productImageSrc}
                 alt={product.name}
                 fill
-                unoptimized={isRemoteProductImage}
                 className="object-contain transition duration-500 group-hover:scale-[1.03]"
                 sizes="(max-width:640px) 100vw, (max-width:1024px) 50vw, 33vw"
               />
@@ -155,7 +190,13 @@ export default function ProductCard({
             disabled={cartLoading}
             className={`${isCatalog ? 'inset-x-5 bottom-5 bg-white py-2 text-gray-950 shadow-sm' : 'inset-x-0 bottom-0 bg-gray-950 py-4 text-white'} absolute z-20 translate-y-full text-sm font-semibold uppercase  transition duration-300 group-hover:translate-y-0`}
           >
-            {cartLoading ? 'Adding...' : 'Add to Cart'}
+            {cartLoading ? (
+              <LoadingLabel spinnerClassName={isCatalog ? 'border-gray-950 border-t-transparent' : 'border-white border-t-transparent'}>
+                Adding...
+              </LoadingLabel>
+            ) : (
+              'Add to Cart'
+            )}
           </button>
         </div>
 
@@ -182,6 +223,7 @@ export default function ProductCard({
         isLoading={cartLoading}
         error={cartError}
       />
+      {cartToast ? <CartToast message={cartToast.message} type={cartToast.type} /> : null}
       </>
     );
   }
@@ -199,7 +241,6 @@ export default function ProductCard({
               src={productImageSrc}
               alt={product.name}
               fill
-              unoptimized={isRemoteProductImage}
               className="object-contain object-center p-0.5 group-hover:scale-[1.03] transition duration-500"
               sizes="(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"
             />
@@ -239,9 +280,22 @@ export default function ProductCard({
           disabled={cartLoading}
           className="mt-2 sm:mt-3 w-full btn-gold py-1.5 sm:py-2 text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2 hover:scale-[1.02] transition-transform disabled:cursor-not-allowed disabled:opacity-60"
         >
-          <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4" />
-          <span className="hidden sm:inline">{cartLoading ? 'Adding...' : 'Add to Bag'}</span>
-          <span className="sm:hidden">{cartLoading ? 'Adding' : 'Bag'}</span>
+          {cartLoading ? (
+            <>
+              <LoadingLabel className="hidden sm:inline-flex" spinnerClassName="border-white border-t-transparent">
+                Adding...
+              </LoadingLabel>
+              <LoadingLabel className="sm:hidden" spinnerClassName="border-white border-t-transparent">
+                Adding
+              </LoadingLabel>
+            </>
+          ) : (
+            <>
+              <ShoppingBag className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Add to Bag</span>
+              <span className="sm:hidden">Bag</span>
+            </>
+          )}
         </button>
       </div>
     </div>
@@ -251,6 +305,7 @@ export default function ProductCard({
       isLoading={cartLoading}
       error={cartError}
     />
+    {cartToast ? <CartToast message={cartToast.message} type={cartToast.type} /> : null}
     </>
   );
 }

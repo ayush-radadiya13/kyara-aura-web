@@ -1,0 +1,163 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { LoadingLabel } from '@/components/ui/loader';
+import { useResetPassword } from '@/hooks/auth';
+import { APP_ROUTES, AUTH_PAGE_ROUTES } from '@/lib/routes';
+import { getApiErrorMessage } from '@/utils/api-error';
+import { resetPasswordSchema } from '@/validations/auth-validation';
+
+export default function ResetPasswordForm({ token = '', email = '' }) {
+  const resetPasswordMutation = useResetPassword();
+  const [values, setValues] = useState({
+    token,
+    email,
+    password: '',
+    password_confirmation: '',
+  });
+  const [errors, setErrors] = useState({});
+  const [formError, setFormError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const setFieldValue = (key, value) => {
+    setValues((current) => ({ ...current, [key]: value }));
+    setErrors((current) => {
+      if (!current[key]) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setFormError('');
+    setSuccessMessage('');
+
+    const payload = {
+      token: values.token.trim(),
+      email: values.email.trim() || undefined,
+      password: values.password,
+      password_confirmation: values.password_confirmation,
+    };
+    const parsed = resetPasswordSchema.safeParse(payload);
+
+    if (!parsed.success) {
+      setErrors(
+        Object.fromEntries(
+          parsed.error.issues.map((issue) => [issue.path[0], issue.message]),
+        ),
+      );
+      return;
+    }
+
+    try {
+      const response = await resetPasswordMutation.mutateAsync(parsed.data);
+      setSuccessMessage(response?.message || 'Your password has been reset. You can now log in.');
+    } catch (error) {
+      setFormError(getApiErrorMessage(error, 'Unable to reset password.'));
+    }
+  };
+
+  return (
+    <div className="w-full max-w-md">
+      <h1 className="text-3xl font-bold text-gray-900">Reset password</h1>
+      <p className="mt-2 text-sm text-gray-500">
+        Enter your reset token and choose a new password.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4" noValidate>
+        <Field
+          id="token"
+          label="Reset token"
+          value={values.token}
+          error={errors.token}
+          onChange={(value) => setFieldValue('token', value)}
+        />
+        <Field
+          id="email"
+          label="Email"
+          type="email"
+          value={values.email}
+          error={errors.email}
+          onChange={(value) => setFieldValue('email', value)}
+        />
+        <Field
+          id="password"
+          label="New password"
+          type="password"
+          value={values.password}
+          error={errors.password}
+          onChange={(value) => setFieldValue('password', value)}
+        />
+        <Field
+          id="password_confirmation"
+          label="Confirm new password"
+          type="password"
+          value={values.password_confirmation}
+          error={errors.password_confirmation}
+          onChange={(value) => setFieldValue('password_confirmation', value)}
+        />
+
+        {formError ? (
+          <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+            {formError}
+          </p>
+        ) : null}
+        {successMessage ? (
+          <p className="rounded bg-green-50 px-3 py-2 text-sm text-green-800" role="status">
+            {successMessage}
+          </p>
+        ) : null}
+
+        <Button
+          type="submit"
+          disabled={resetPasswordMutation.isPending}
+          className="h-12 w-full rounded-none !bg-[#C99B4D] text-base font-semibold text-primary-foreground hover:!bg-[#C99B4D]/90"
+        >
+          {resetPasswordMutation.isPending ? (
+            <LoadingLabel spinnerClassName="border-white border-t-transparent">
+              Resetting...
+            </LoadingLabel>
+          ) : (
+            'Reset password'
+          )}
+        </Button>
+
+        <div className="space-y-3 text-center text-sm">
+          <Link href={AUTH_PAGE_ROUTES.LOGIN} className="block font-semibold text-primary hover:text-primary/80">
+            Back to login
+          </Link>
+          <Link href={APP_ROUTES.HOME} className="block font-semibold text-primary hover:text-primary/80">
+            Go to Home
+          </Link>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function Field({ id, label, value, onChange, error, type = 'text' }) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-sm font-medium text-gray-700">
+        {label}
+      </label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 w-full rounded border border-gray-300 px-3 text-sm"
+        autoComplete={type === 'password' ? 'new-password' : id}
+      />
+      {error ? (
+        <p className="mt-1 text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}

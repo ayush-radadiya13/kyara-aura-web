@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AuthField from '@/components/auth/AuthField';
+import { LoadingLabel } from '@/components/ui/loader';
 import { useLogin } from '@/hooks/auth';
 import { useAuthSession } from '@/hooks/auth/use-auth-session';
 import { buildAuthPayload } from '@/lib/auth/fields';
@@ -107,7 +108,13 @@ export default function CartLoginPanel({ fieldKeys, redirectTo = '/cart' }) {
           disabled={loginMutation.isPending}
           className="h-12 w-full rounded bg-[#3d2b1f] text-base font-bold text-white transition-colors hover:bg-[#2d2016] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loginMutation.isPending ? 'Please wait…' : 'Continue'}
+          {loginMutation.isPending ? (
+            <LoadingLabel spinnerClassName="border-white border-t-transparent">
+              Please wait...
+            </LoadingLabel>
+          ) : (
+            'Continue'
+          )}
         </button>
 
         <p className="text-center text-xs text-gray-500">
