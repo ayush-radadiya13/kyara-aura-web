@@ -5,6 +5,7 @@ import { ChevronDown, Grid2X2, List } from "lucide-react";
 import ProductCard from "@/components/ProductCard";
 import { LoaderBlock } from "@/components/ui/loader";
 import {
+  useCollectionProducts,
   useFeaturedProducts,
   useProducts,
   useProductsByCategory,
@@ -12,7 +13,9 @@ import {
 
 export default function ProductList({
   categoryId,
+  collection = false,
   featured = false,
+  gridClassName,
   limit,
   emptyMessage = "No products available at the moment.",
   variant = "default",
@@ -20,16 +23,21 @@ export default function ProductList({
 }) {
   const [currentPage, setCurrentPage] = useState(1);
   const allProductsQuery = useProducts({
-    enabled: !categoryId && !featured,
+    enabled: !categoryId && !featured && !collection,
   });
   const categoryProductsQuery = useProductsByCategory(categoryId, {
-    enabled: Boolean(categoryId),
+    enabled: Boolean(categoryId) && !collection,
   });
   const featuredProductsQuery = useFeaturedProducts({
-    enabled: featured,
+    enabled: featured && !collection,
+  });
+  const collectionProductsQuery = useCollectionProducts({
+    enabled: collection,
   });
 
-  const query = featured
+  const query = collection
+    ? collectionProductsQuery
+    : featured
     ? featuredProductsQuery
     : categoryId
       ? categoryProductsQuery
@@ -98,11 +106,12 @@ export default function ProductList({
 
       <div
         className={
-          isCatalog
+          gridClassName ??
+          (isCatalog
             ? "grid grid-cols-2 gap-x-4 gap-y-9 sm:gap-x-5 lg:grid-cols-4"
             : variant === "editorial"
             ? "grid grid-cols-2 gap-x-5 gap-y-12 sm:grid-cols-2 lg:grid-cols-4"
-            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6"
+            : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4 md:gap-6")
         }
       >
         {visibleProducts.map((product) => (

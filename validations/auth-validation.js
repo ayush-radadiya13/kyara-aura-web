@@ -22,13 +22,17 @@ export const registerSchema = z
   });
 
 export const forgotPasswordSchema = z.object({
-  email: z.string().email("Enter a valid email"),
+  phone: z
+    .string()
+    .regex(INDIAN_PHONE_PATTERN, "Enter a valid 10-digit Indian mobile number"),
 });
 
 export const resetPasswordSchema = z
   .object({
-    token: z.string().min(1, "Reset token is required"),
-    email: z.string().email("Enter a valid email").optional(),
+    phone: z
+      .string()
+      .regex(INDIAN_PHONE_PATTERN, "Enter a valid 10-digit Indian mobile number"),
+    otp: z.string().min(1, "OTP is required"),
     password: z.string().min(8, "Password must be at least 8 characters"),
     password_confirmation: z.string().min(1, "Please confirm your password"),
   })

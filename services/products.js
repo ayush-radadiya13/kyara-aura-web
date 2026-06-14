@@ -18,6 +18,11 @@ export async function getFeaturedProductsApi() {
   return normalizeProductsPayload(data);
 }
 
+export async function getCollectionProductsApi() {
+  const { data } = await withoutTokenApi.get(PRODUCT_API_ROUTES.COLLECTION);
+  return normalizeProductsPayload(data);
+}
+
 export async function getProductsByCategoryApi(categoryId) {
   if (!categoryId) {
     return getProductsApi();

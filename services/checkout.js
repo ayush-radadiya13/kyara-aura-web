@@ -40,6 +40,11 @@ export async function createOrderApi(payload) {
   return unwrapData(response);
 }
 
+export async function sendCodOrderOtpApi(payload) {
+  const response = await customAxios.post(CHECKOUT_API_ROUTES.SEND_COD_OTP, payload);
+  return unwrapData(response);
+}
+
 export async function verifyRazorpayPaymentApi(payload) {
   const response = await customAxios.post(CHECKOUT_API_ROUTES.VERIFY_RAZORPAY_PAYMENT, payload);
   return unwrapData(response);

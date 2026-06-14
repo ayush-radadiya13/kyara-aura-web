@@ -150,32 +150,14 @@ export default function HomePage() {
                 that intertwines graceful symbolism with a modern golden glow.
               </p>
 
-              <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                {[
-                  { title: 'Earrings', price: 'Rs. 13,999', image: '/assets/home1.jpg' },
-                  { title: 'Necklace', price: 'Rs. 10,999', image: '/assets/home4.jpg' },
-                  { title: 'Ring', price: 'Rs. 9,999', image: '/assets/home2.jpg' },
-                ].map((item, index) => (
-                    <div
-                        key={item.title}
-                        className="home-reveal group bg-[#f8f8f7] transition duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-gray-950/10"
-                        style={{ '--home-delay': `${240 + index * 90}ms` }}
-                    >
-                      <div className="relative aspect-square overflow-hidden">
-                        <Image
-                            src={item.image}
-                            alt={`${item.title} jewellery from Kyara Aura`}
-                            fill
-                            className="object-cover transition duration-500 group-hover:scale-105"
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 33vw, 15vw"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <h3 className="text-md font-semibold text-gray-950">{item.title}</h3>
-                        <p className="mt-1 text-xs text-gray-500">{item.price}</p>
-                      </div>
-                    </div>
-                ))}
+              <div className="mt-8">
+                <ProductList
+                  collection
+                  limit={3}
+                  variant="editorial"
+                  gridClassName="grid grid-cols-1 gap-4 sm:grid-cols-3"
+                  emptyMessage="No collection products available at the moment."
+                />
               </div>
             </div>
           </div>

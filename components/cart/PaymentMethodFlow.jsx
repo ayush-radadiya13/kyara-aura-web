@@ -27,6 +27,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { LoaderBlock, LoadingLabel } from '@/components/ui/loader';
+import { useScrollLock } from '@/hooks/use-scroll-lock';
 import { formatInr } from '@/lib/cart/format';
 import { useCartStore } from '@/lib/cart/store';
 import { APP_ROUTES, AUTH_PAGE_ROUTES, withRedirect } from '@/lib/routes';
@@ -36,6 +37,7 @@ import {
   deleteAddressApi,
   getAddressesApi,
   getCheckoutSummaryApi,
+  sendCodOrderOtpApi,
   setDefaultAddressApi,
   updateAddressApi,
   verifyRazorpayPaymentApi,
@@ -211,6 +213,9 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
   const [savingAddress, setSavingAddress] = useState(false);
   const [addressActionId, setAddressActionId] = useState(null);
   const [placingOrder, setPlacingOrder] = useState(false);
+  const [codOtpDialogOpen, setCodOtpDialogOpen] = useState(false);
+  const [codOtp, setCodOtp] = useState('');
+  const [codOtpError, setCodOtpError] = useState('');
   const [error, setError] = useState('');
   const [paymentNotice, setPaymentNotice] = useState('');
   const [toast, setToast] = useState(null);
@@ -467,41 +472,59 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
     });
   };
 
+  const getOrderPayload = (extraPayload = {}) => ({
+    ...buildCheckoutPayload({ checkoutIntent, selectedAddressId, selectedMethod }),
+    ...(notes.trim() ? { notes: notes.trim() } : {}),
+    ...extraPayload,
+  });
+
+  const completeOrder = async (payload, paymentMethod) => {
+    const orderResponse = await createOrderApi(payload);
+    const order = orderResponse?.order;
+    const razorpay = orderResponse?.razorpay;
+
+    if (!order?.id) {
+      throw new Error('Order response is missing order details.');
+    }
+
+    if (paymentMethod === 'cod') {
+      if (checkoutIntent.checkout_type === 'cart') clearCart();
+      router.push(`/order-success/${order.id}`);
+      return;
+    }
+
+    if (!razorpay) {
+      throw new Error('Razorpay checkout data missing.');
+    }
+
+    const verifiedOrder = await openRazorpayPayment({ order, razorpay });
+    if (checkoutIntent.checkout_type === 'cart') clearCart();
+    router.push(`/order-success/${verifiedOrder?.id ?? order.id}`);
+  };
+
   const handlePlaceOrder = async () => {
     if (!canPlaceOrder) return;
 
     setPlacingOrder(true);
     setError('');
     setPaymentNotice('');
+    setCodOtpError('');
 
     try {
-      const payload = {
-        ...buildCheckoutPayload({ checkoutIntent, selectedAddressId, selectedMethod }),
-        ...(notes.trim() ? { notes: notes.trim() } : {}),
-      };
-      const orderResponse = await createOrderApi(payload);
-      const order = orderResponse?.order;
-      const razorpay = orderResponse?.razorpay;
-
-      if (!order?.id) {
-        throw new Error('Order response is missing order details.');
-      }
-
       if (selectedMethod === 'cod') {
-        if (checkoutIntent.checkout_type === 'cart') clearCart();
-        router.push(`/order-success/${order.id}`);
+        await sendCodOrderOtpApi({ address_id: Number(selectedAddressId) });
+        setCodOtp('');
+        setCodOtpDialogOpen(true);
+        showToast('OTP sent for Cash on Delivery.');
         return;
       }
 
-      if (!razorpay) {
-        throw new Error('Razorpay checkout data missing.');
-      }
-
-      const verifiedOrder = await openRazorpayPayment({ order, razorpay });
-      if (checkoutIntent.checkout_type === 'cart') clearCart();
-      router.push(`/order-success/${verifiedOrder?.id ?? order.id}`);
+      await completeOrder(getOrderPayload(), selectedMethod);
     } catch (orderError) {
-      const message = getApiErrorMessage(orderError, 'Unable to place your order.');
+      const fallbackMessage = selectedMethod === 'cod'
+        ? 'Unable to send OTP for Cash on Delivery.'
+        : 'Unable to place your order.';
+      const message = getApiErrorMessage(orderError, fallbackMessage);
       setError(message);
 
       const status = orderError?.response?.status;
@@ -510,6 +533,41 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
       } else if (message.toLowerCase().includes('pending')) {
         setPaymentNotice(message);
       }
+    } finally {
+      setPlacingOrder(false);
+    }
+  };
+
+  const handleCodOtpChange = (value) => {
+    setCodOtp(value.replace(/\D/g, '').slice(0, 6));
+    if (codOtpError) setCodOtpError('');
+  };
+
+  const closeCodOtpDialog = () => {
+    if (placingOrder) return;
+
+    setCodOtpDialogOpen(false);
+    setCodOtp('');
+    setCodOtpError('');
+  };
+
+  const handleSubmitCodOtp = async () => {
+    const normalizedOtp = codOtp.trim();
+    if (!/^\d{6}$/.test(normalizedOtp)) {
+      setCodOtpError('Please enter the 6-digit OTP.');
+      return;
+    }
+
+    setPlacingOrder(true);
+    setError('');
+    setPaymentNotice('');
+    setCodOtpError('');
+
+    try {
+      await completeOrder(getOrderPayload({ cod_otp: normalizedOtp }), 'cod');
+      setCodOtpDialogOpen(false);
+    } catch (orderError) {
+      setCodOtpError(getApiErrorMessage(orderError, 'Unable to verify OTP and place your order.'));
     } finally {
       setPlacingOrder(false);
     }
@@ -640,7 +698,113 @@ export default function PaymentMethodFlow({ initialCheckoutIntent = { checkout_t
         </div>
       </div>
 
+      <CodOtpDialog
+        open={codOtpDialogOpen}
+        otp={codOtp}
+        error={codOtpError}
+        loading={placingOrder}
+        onOtpChange={handleCodOtpChange}
+        onClose={closeCodOtpDialog}
+        onSubmit={handleSubmitCodOtp}
+      />
+
       {toast ? <Toast message={toast.message} type={toast.type} /> : null}
+    </div>
+  );
+}
+
+function CodOtpDialog({ open, otp, error, loading, onOtpChange, onClose, onSubmit }) {
+  useScrollLock(open);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-gray-950/45 p-4 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cod-otp-title"
+    >
+      <button type="button" className="absolute inset-0" aria-label="Close OTP popup" onClick={onClose} disabled={loading} />
+
+      <div className="relative w-full max-w-md rounded-2xl border border-gray-100 bg-white p-5 shadow-2xl" data-lenis-prevent>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 id="cod-otp-title" className="text-lg font-extrabold text-gray-950">
+              Verify COD OTP
+            </h2>
+            <p className="mt-1 text-sm font-semibold leading-6 text-gray-500">
+              Enter the 6-digit OTP sent for your Cash on Delivery order.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition hover:bg-gray-200 disabled:opacity-50"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <label htmlFor="cod-otp" className="mt-5 block text-xs font-bold uppercase tracking-wide text-gray-500">
+          OTP
+        </label>
+        <input
+          id="cod-otp"
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          autoComplete="one-time-code"
+          maxLength={6}
+          value={otp}
+          onChange={(event) => onOtpChange(event.target.value)}
+          disabled={loading}
+          autoFocus
+          className="mt-2 h-12 w-full rounded-2xl border border-gray-200 bg-white px-4 text-center text-xl font-extrabold tracking-[0.45em] text-gray-950 outline-none transition placeholder:tracking-normal focus:border-gray-950 disabled:opacity-60"
+          placeholder="000000"
+        />
+        {error ? <p className="mt-2 text-sm font-semibold text-red-600">{error}</p> : null}
+
+        <div className="mt-5 flex gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-full border border-gray-200 px-4 text-sm font-bold text-gray-700 transition hover:border-gray-950 disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={loading}
+            className="inline-flex h-11 flex-1 items-center justify-center rounded-full bg-gray-950 px-4 text-sm font-bold text-white transition hover:bg-gray-800 disabled:opacity-50"
+          >
+            {loading ? (
+              <LoadingLabel spinnerClassName="border-white border-t-transparent">
+                Placing order...
+              </LoadingLabel>
+            ) : (
+              'Verify & Place'
+            )}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

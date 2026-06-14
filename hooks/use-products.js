@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import {
+  getCollectionProductsApi,
   getFeaturedProductsApi,
   getProductBySlugApi,
   getProductsApi,
@@ -23,6 +24,16 @@ export function useFeaturedProducts(options = {}) {
   return useQuery({
     queryKey: ["products", "featured"],
     queryFn: getFeaturedProductsApi,
+    refetchOnMount: "always",
+    retry: false,
+    ...options,
+  });
+}
+
+export function useCollectionProducts(options = {}) {
+  return useQuery({
+    queryKey: ["products", "collection"],
+    queryFn: getCollectionProductsApi,
     refetchOnMount: "always",
     retry: false,
     ...options,

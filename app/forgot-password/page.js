@@ -12,7 +12,7 @@ import { forgotPasswordSchema } from '@/validations/auth-validation';
 
 export default function ForgotPasswordPage() {
   const forgotPasswordMutation = useForgotPassword();
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [fieldError, setFieldError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -23,9 +23,9 @@ export default function ForgotPasswordPage() {
     setFieldError('');
     setSuccessMessage('');
 
-    const parsed = forgotPasswordSchema.safeParse({ email: email.trim() });
+    const parsed = forgotPasswordSchema.safeParse({ phone: phone.trim() });
     if (!parsed.success) {
-      setFieldError(parsed.error.issues[0]?.message || 'Enter a valid email');
+      setFieldError(parsed.error.issues[0]?.message || 'Enter a valid mobile number');
       return;
     }
 
@@ -33,10 +33,10 @@ export default function ForgotPasswordPage() {
       const response = await forgotPasswordMutation.mutateAsync(parsed.data);
       setSuccessMessage(
         response?.message ||
-          'If an account exists for this email, you will receive reset instructions shortly.',
+          'If an account exists for this number, you will receive an OTP shortly.',
       );
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Unable to send reset email.'));
+      setError(getApiErrorMessage(err, 'Unable to send reset OTP.'));
     }
   };
 
@@ -53,21 +53,21 @@ export default function ForgotPasswordPage() {
           <div className="w-full max-w-md">
             <h1 className="text-3xl font-bold text-gray-900">Forgot password</h1>
             <p className="mt-2 text-sm text-gray-500">
-              Enter your email and we&apos;ll send you a reset link.
+              Enter your mobile number and we&apos;ll send you a reset OTP.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-4" noValidate>
               <div>
-                <label htmlFor="email" className="mb-1 block text-sm font-medium text-gray-700">
-                  Email
+                <label htmlFor="phone" className="mb-1 block text-sm font-medium text-gray-700">
+                  Mobile Number
                 </label>
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="h-11 w-full rounded border border-gray-300 px-3 text-sm"
-                  autoComplete="email"
+                  autoComplete="tel-national"
                 />
                 {fieldError ? (
                   <p className="mt-1 text-sm text-red-600" role="alert">
@@ -98,7 +98,7 @@ export default function ForgotPasswordPage() {
                     Sending...
                   </LoadingLabel>
                 ) : (
-                  'Send reset link'
+                  'Send reset OTP'
                 )}
               </Button>
 
