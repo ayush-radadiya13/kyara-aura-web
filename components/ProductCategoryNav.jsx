@@ -3,24 +3,12 @@
 import Link from "next/link";
 import { useCategories } from "@/hooks/use-categories";
 
-const FALLBACK_CATEGORIES = [
-  "Earring",
-  "Necklace",
-  "Bracelet",
-  "Rings",
-  "Watches",
-  "Men's Jewelry",
-];
-
 export default function ProductCategoryNav({ activeCategoryId }) {
-  const { data: categories = [], isError } = useCategories();
-  const visibleCategories =
-    !isError && categories.length
-      ? categories.map((category) => ({
-          id: category._id,
-          name: category.name,
-        }))
-      :     FALLBACK_CATEGORIES.map((name) => ({ id: "", name }));
+  const { data: categories = [] } = useCategories();
+  const visibleCategories = categories.map((category) => ({
+    id: category._id,
+    name: category.name,
+  }));
 
   return (
     <nav
@@ -28,6 +16,18 @@ export default function ProductCategoryNav({ activeCategoryId }) {
       className=" -mx-4 flex snap-x snap-mandatory items-center justify-start gap-3 overflow-x-auto px-4 pb-2 text-[14px] font-semibold uppercase text-gray-950 [-ms-overflow-style:none] [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
       data-lenis-prevent
     >
+      <span className="flex shrink-0 snap-start items-center gap-3">
+        <Link
+          href="/products"
+          aria-current={!activeCategoryId ? "page" : undefined}
+          className={`transition hover:text-gray-950 ${
+            !activeCategoryId ? "font-medium text-gray-950" : ""
+          }`}
+        >
+          All
+        </Link>
+        {visibleCategories.length ? <span aria-hidden="true">|</span> : null}
+      </span>
       {visibleCategories.map((category, index) => {
         const isActive = category.id && category.id === activeCategoryId;
         const href = category.id
@@ -45,7 +45,7 @@ export default function ProductCategoryNav({ activeCategoryId }) {
             >
               {category.name}
             </Link>
-            {index < visibleCategories.length - 1 && <span aria-hidden="true">|</span>}
+            {index < visibleCategories.length - 1 ? <span aria-hidden="true">|</span> : null}
           </span>
         );
       })}

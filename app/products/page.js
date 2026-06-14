@@ -1,6 +1,5 @@
 
 import Header from '../../components/Header';
-import ProductCategoryNav from '@/components/ProductCategoryNav';
 import ProductList from '@/components/ProductList';
 import {Cormorant_Garamond} from "next/font/google";
 
@@ -25,10 +24,10 @@ export default async function ProductsPage({ searchParams }) {
           <h1 className={`${categoryDisplay.className} mb-2  text-3xl font-medium tracking-[-0.05em] text-gray-950 md:text-5xl`}>
             Products
           </h1>
-          <ProductCategoryNav activeCategoryId={categoryId} />
         </div>
 
         <ProductList
+          key={categoryId ?? 'all-products'}
           categoryId={categoryId}
           pageSize={16}
           variant="catalog"
